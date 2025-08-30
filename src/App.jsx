@@ -1,0 +1,837 @@
+import React, { useState, useEffect } from 'react';
+import Clientes from './assets/Cliente';
+import Orcamentos from './assets/Orçamentos';
+import Projetos from './assets/Projetos';
+import Avaliacao from './assets/Avaliacao';
+import Laudos from './assets/Laudos';
+import NovoCliente from './assets/NovoCliente';
+import NovoProjeto from './assets/NovoProjeto';
+import NovoOrcamento from './assets/NovoOrcamento';
+
+const SaaSApp = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [activeSection, setActiveSection] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [isLogin, setIsLogin] = useState(true);
+  const [showNovoCliente, setShowNovoCliente] = useState(false);
+  const [showNovoProjeto, setShowNovoProjeto] = useState(false);
+  const [showNovoOrcamento, setShowNovoOrcamento] = useState(false);
+
+  // Simular verificação de autenticação ao carregar
+  useEffect(() => {
+    const savedAuth = sessionStorage.getItem('isAuthenticated');
+    if (savedAuth === 'true') {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleAuth = (e) => {
+    e.preventDefault();
+    if (loginForm.email && loginForm.password) {
+      setIsAuthenticated(true);
+      sessionStorage.setItem('isAuthenticated', 'true');
+      setLoginForm({ email: '', password: '' });
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    sessionStorage.removeItem('isAuthenticated');
+    setActiveSection('dashboard');
+  };
+
+  // Reset global styles
+  useEffect(() => {
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.height = '100%';
+    document.body.style.height = '100%';
+    
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
+
+  // CSS inline otimizado para tela inteira
+  const styles = {
+    appContainer: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: '100vw',
+      height: '100vh',
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      overflow: 'hidden'
+    },
+    loginContainer: {
+      width: '100vw',
+      height: '100vh',
+      background: 'linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #e0e7ff 100%)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px',
+      boxSizing: 'border-box'
+    },
+    loginCard: {
+      background: 'rgba(255, 255, 255, 0.95)',
+      borderRadius: '16px',
+      padding: '40px',
+      width: '100%',
+      maxWidth: '420px',
+      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
+      border: '1px solid rgba(255, 255, 255, 0.5)'
+    },
+    logoContainer: {
+      width: '64px',
+      height: '64px',
+      background: 'linear-gradient(135deg, #10b981, #0d9488)',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      margin: '0 auto 20px',
+      color: 'white',
+      fontSize: '24px',
+      fontWeight: 'bold'
+    },
+    input: {
+      width: '100%',
+      background: 'rgba(255, 255, 255, 0.9)',
+      border: '2px solid #e2e8f0',
+      borderRadius: '8px',
+      padding: '14px 16px',
+      fontSize: '16px',
+      color: '#1e293b',
+      outline: 'none',
+      marginBottom: '16px',
+      boxSizing: 'border-box',
+      transition: 'border-color 0.2s'
+    },
+    button: {
+      width: '100%',
+      background: 'linear-gradient(135deg, #059669, #0d9488)',
+      color: 'white',
+      padding: '14px',
+      borderRadius: '8px',
+      border: 'none',
+      fontWeight: '600',
+      fontSize: '16px',
+      cursor: 'pointer',
+      transition: 'transform 0.2s',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+    },
+    mainAppContainer: {
+      width: '100vw',
+      height: '100vh',
+      display: 'flex',
+      background: 'linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #e0e7ff 100%)',
+      overflow: 'hidden'
+    },
+    sidebar: {
+      width: sidebarOpen ? '260px' : '70px',
+      height: '100vh',
+      background: '#1e293b',
+      color: 'white',
+      transition: 'width 0.3s ease',
+      display: 'flex',
+      flexDirection: 'column',
+      flexShrink: 0,
+      boxShadow: '2px 0 10px rgba(0, 0, 0, 0.1)'
+    },
+    sidebarHeader: {
+      padding: '20px 16px',
+      borderBottom: '1px solid #475569',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: sidebarOpen ? 'space-between' : 'center',
+      minHeight: '60px'
+    },
+    sidebarNav: {
+      padding: '16px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px',
+      flex: 1
+    },
+    sidebarItem: {
+      width: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      padding: '12px',
+      borderRadius: '8px',
+      border: 'none',
+      background: 'transparent',
+      color: '#cbd5e1',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      fontSize: '16px',
+      textAlign: 'left'
+    },
+    sidebarItemActive: {
+      background: '#059669',
+      color: 'white',
+      boxShadow: '0 4px 8px rgba(5, 150, 105, 0.3)'
+    },
+    sidebarFooter: {
+      padding: '16px',
+      borderTop: '1px solid #475569'
+    },
+    mainContent: {
+      flex: 1,
+      height: '100vh',
+      overflow: 'auto',
+      display: 'flex',
+      flexDirection: 'column'
+    },
+    contentArea: {
+      flex: 1,
+      padding: '30px',
+      overflow: 'auto'
+    },
+    pageHeader: {
+      textAlign: 'center',
+      marginBottom: '40px'
+    },
+    pageTitle: {
+      fontSize: '42px',
+      fontWeight: 'bold',
+      color: '#1e293b',
+      margin: '0 0 12px 0'
+    },
+    pageSubtitle: {
+      color: '#64748b',
+      fontSize: '18px',
+      margin: 0
+    },
+    dashboardGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+      gap: '24px',
+      maxWidth: '1200px',
+      margin: '0 auto'
+    },
+    card: {
+      background: 'rgba(255, 255, 255, 0.95)',
+      borderRadius: '12px',
+      padding: '28px',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+      border: '1px solid rgba(255, 255, 255, 0.5)',
+      transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+    },
+    cardContent: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between'
+    },
+    cardInfo: {
+      flex: 1
+    },
+    cardTitle: {
+      color: '#64748b',
+      fontSize: '14px',
+      fontWeight: '500',
+      margin: '0 0 8px 0',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px'
+    },
+    cardValue: {
+      fontSize: '36px',
+      fontWeight: 'bold',
+      color: '#1e293b',
+      margin: 0
+    },
+    cardIcon: {
+      padding: '16px',
+      borderRadius: '12px',
+      color: 'white',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    table: {
+      width: '100%',
+      borderCollapse: 'collapse',
+      background: 'white',
+      borderRadius: '8px',
+      overflow: 'hidden',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'
+    },
+    tableHeader: {
+      textAlign: 'left',
+      padding: '16px',
+      background: '#f8fafc',
+      fontWeight: '600',
+      color: '#1e293b',
+      borderBottom: '1px solid #e2e8f0'
+    },
+    tableCell: {
+      padding: '16px',
+      borderBottom: '1px solid #e2e8f0',
+      color: '#64748b'
+    },
+    statusBadge: {
+      background: '#dcfce7',
+      color: '#166534',
+      padding: '6px 12px',
+      borderRadius: '20px',
+      fontSize: '12px',
+      fontWeight: '500',
+      display: 'inline-block'
+    },
+    actionButton: {
+      background: 'linear-gradient(135deg, #059669, #0d9488)',
+      color: 'white',
+      padding: '12px 24px',
+      borderRadius: '8px',
+      border: 'none',
+      fontWeight: '600',
+      cursor: 'pointer',
+      transition: 'transform 0.2s',
+      fontSize: '16px'
+    },
+    iconButton: {
+      padding: '8px',
+      background: 'transparent',
+      border: 'none',
+      borderRadius: '6px',
+      cursor: 'pointer',
+      color: 'inherit',
+      transition: 'background-color 0.2s'
+    }
+  };
+
+  // Ícones SVG
+  const icons = {
+    menu: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>,
+    x: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
+    user: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>,
+    folder: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>,
+    calculator: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="8" y2="10"></line><line x1="12" y1="10" x2="12" y2="10"></line><line x1="16" y1="10" x2="16" y2="10"></line><line x1="8" y1="14" x2="8" y2="14"></line><line x1="12" y1="14" x2="12" y2="14"></line><line x1="16" y1="14" x2="16" y2="14"></line><line x1="8" y1="18" x2="8" y2="18"></line><line x1="12" y1="18" x2="12" y2="18"></line><line x1="16" y1="18" x2="16" y2="18"></line></svg>,
+    star: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon></svg>,
+    file: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14,2 14,8 20,8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10,9 9,9 8,9"></polyline></svg>,
+    logout: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16,17 21,12 16,7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>,
+    lock: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><circle cx="12" cy="16" r="1"></circle><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>,
+    mail: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+  };
+
+  const sidebarItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: 'menu' },
+    { id: 'cliente', label: 'Cliente', icon: 'user' },
+    { id: 'projeto', label: 'Projeto', icon: 'folder' },
+    { id: 'orcamento', label: 'Orçamento', icon: 'calculator' },
+    { id: 'avaliacao', label: 'Avaliação', icon: 'star' },
+    { id: 'laudo', label: 'Laudo', icon: 'file' }
+  ];
+
+  // Componente de Login
+  const LoginPage = () => (
+    <div style={styles.loginContainer}>
+      <div style={styles.loginCard}>
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={styles.logoContainer}>
+            {icons.lock}
+          </div>
+          <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#1e293b', margin: '0 0 8px 0' }}>GeoMind</h1>
+          <p style={{ color: '#64748b', margin: 0 }}>
+            {isLogin ? 'Faça login em sua conta' : 'Crie sua nova conta'}
+          </p>
+        </div>
+
+        <form onSubmit={handleAuth} style={{ marginBottom: '24px' }}>
+          <div style={{ position: 'relative', marginBottom: '16px' }}>
+            <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>
+              {icons.mail}
+            </div>
+            <input
+              type="email"
+              placeholder="Email"
+              value={loginForm.email}
+              onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
+              style={{ ...styles.input, paddingLeft: '50px', marginBottom: 0 }}
+              required
+            />
+          </div>
+          
+          <div style={{ position: 'relative', marginBottom: '24px' }}>
+            <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <circle cx="12" cy="16" r="1"></circle>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <input
+              type="password"
+              placeholder="Senha (máx. 8 caracteres)"
+              value={loginForm.password}
+              onChange={(e) => setLoginForm({...loginForm, password: e.target.value.slice(0, 8)})}
+              maxLength={8}
+              style={{ ...styles.input, paddingLeft: '50px', marginBottom: 0 }}
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            style={styles.button}
+            onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+            onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+          >
+            {isLogin ? 'Entrar' : 'Cadastrar'}
+          </button>
+        </form>
+
+        <div style={{ textAlign: 'center' }}>
+          <button
+            onClick={() => setIsLogin(!isLogin)}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: '#64748b', 
+              cursor: 'pointer',
+              fontSize: '16px'
+            }}
+          >
+            {isLogin ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Faça login'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Componente de Sidebar
+  const Sidebar = () => (
+    <div style={styles.sidebar}>
+      <div style={styles.sidebarHeader}>
+        {sidebarOpen && (
+          <h2 style={{ 
+            fontWeight: 'bold', 
+            fontSize: '20px', 
+            margin: 0
+          }}>
+            GeoMind
+          </h2>
+        )}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          style={{
+            ...styles.iconButton,
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            width: '36px',
+            height: '36px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}
+          onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
+          onMouseOut={(e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+        >
+          {sidebarOpen ? icons.x : icons.menu}
+        </button>
+      </div>
+
+      <nav style={styles.sidebarNav}>
+        {sidebarItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setActiveSection(item.id)}
+            style={{
+              ...styles.sidebarItem,
+              ...(activeSection === item.id ? styles.sidebarItemActive : {}),
+              justifyContent: sidebarOpen ? 'flex-start' : 'center',
+              padding: sidebarOpen ? '12px' : '12px 8px'
+            }}
+            onMouseOver={(e) => {
+              if (activeSection !== item.id) {
+                e.target.style.backgroundColor = '#334155';
+                e.target.style.color = 'white';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (activeSection !== item.id) {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.color = '#cbd5e1';
+              }
+            }}
+          >
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              justifyContent: 'center',
+              minWidth: '24px'
+            }}>
+              {icons[item.icon]}
+            </div>
+            {sidebarOpen && (
+              <span style={{ marginLeft: '12px' }}>
+                {item.label}
+              </span>
+            )}
+          </button>
+        ))}
+      </nav>
+
+      <div style={styles.sidebarFooter}>
+        <button
+          onClick={handleLogout}
+          style={{
+            ...styles.sidebarItem,
+            justifyContent: sidebarOpen ? 'flex-start' : 'center',
+            padding: sidebarOpen ? '12px' : '12px 8px'
+          }}
+          onMouseOver={(e) => {
+            e.target.style.backgroundColor = '#dc2626';
+            e.target.style.color = 'white';
+          }}
+          onMouseOut={(e) => {
+            e.target.style.backgroundColor = 'transparent';
+            e.target.style.color = '#cbd5e1';
+          }}
+        >
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            justifyContent: 'center',
+            minWidth: '20px'
+          }}>
+            {icons.logout}
+          </div>
+          {sidebarOpen && (
+            <span style={{ marginLeft: '12px' }}>
+              Sair
+            </span>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+
+  // Componente de Conteúdo Principal
+  const MainContent = () => {
+    const renderContent = () => {
+      switch (activeSection) {
+        case 'dashboard':
+          return (
+            <>
+              <div style={styles.pageHeader}>
+                <h1 style={styles.pageTitle}>Dashboard</h1>
+                <p style={styles.pageSubtitle}>Bem-vindo ao GeoMind</p>
+              </div>
+              
+              <div style={styles.dashboardGrid}>
+                {[
+                  { title: 'Clientes', value: '124', color: '#10b981', icon: 'user', section: 'cliente' },
+                  { title: 'Projetos', value: '43', color: '#0d9488', icon: 'folder', section: 'projetos' },
+                  { title: 'Orçamentos', value: '28', color: '#0891b2', icon: 'calculator', section: 'orcamentos' },
+                  { title: 'Avaliação', value: '15', color: '#8b5cf6', icon: 'star', section: 'avaliacao' },
+                  { title: 'Laudos', value: '17', color: '#3b82f6', icon: 'file', section: 'laudos' }
+                ].map((card, index) => (
+                  <div 
+                    key={index} 
+                    style={{
+                      ...styles.card,
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => setActiveSection(card.section)}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.15)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.1)';
+                    }}
+                  >
+                    <div style={styles.cardContent}>
+                      <div style={styles.cardInfo}>
+                        <p style={styles.cardTitle}>{card.title}</p>
+                        <p style={styles.cardValue}>{card.value}</p>
+                      </div>
+                      <div style={{ ...styles.cardIcon, backgroundColor: card.color }}>
+                        {icons[card.icon]}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          );
+        
+        case 'cliente':
+          return (
+            <>
+              <div style={styles.pageHeader}>
+                <h1 style={styles.pageTitle}>Gestão de Clientes</h1>
+                <button 
+                  style={styles.actionButton}
+                  onClick={() => setShowNovoCliente(true)}
+                  onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                  onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                >
+                  Novo Cliente
+                </button>
+              </div>
+              
+              <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+                <div style={styles.card}>
+                  <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px' }}>Lista de Clientes</h3>
+                  <table style={styles.table}>
+                    <thead>
+                      <tr>
+                        <th style={styles.tableHeader}>Nome</th>
+                        <th style={styles.tableHeader}>Email</th>
+                        <th style={styles.tableHeader}>Status</th>
+                        <th style={styles.tableHeader}>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <Clientes />
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          );
+
+        case 'orcamentos':
+          return (
+            <>
+              <div style={styles.pageHeader}>
+                <h1 style={styles.pageTitle}>Gestão de Orçamentos</h1>
+                <button 
+                  style={styles.actionButton}
+                  onClick={() => setShowNovoOrcamento(true)}
+                  onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                  onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                >
+                  Novo Orçamento
+                </button>
+              </div>
+              
+              <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+                <div style={styles.card}>
+                  <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px' }}>Lista de Orçamentos</h3>
+                  <table style={styles.table}>
+                    <thead>
+                      <tr>
+                        <th style={styles.tableHeader}>Email</th>
+                        <th style={styles.tableHeader}>Status</th>
+                        <th style={styles.tableHeader}>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <Orcamentos />
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          );
+
+        case 'projetos':
+          return (
+            <>
+              <div style={styles.pageHeader}>
+                <h1 style={styles.pageTitle}>Gestão de Projetos</h1>
+                <button 
+                  style={styles.actionButton}
+                  onClick={() => setShowNovoProjeto(true)}
+                  onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                  onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                >
+                  Novo Projeto
+                </button>
+              </div>
+              
+              <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+                <div style={styles.card}>
+                  <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px' }}>Lista de Projetos</h3>
+                  <table style={styles.table}>
+                    <thead>
+                      <tr>
+                        <th style={styles.tableHeader}>Nome</th>
+                        <th style={styles.tableHeader}>Cliente</th>
+                        <th style={styles.tableHeader}>Status</th>
+                        <th style={styles.tableHeader}>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <Projetos />
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          );
+
+        case 'avaliacao':
+          return (
+            <>
+              <div style={styles.pageHeader}>
+                <h1 style={styles.pageTitle}>Gestão de Avaliações</h1>
+                <button 
+                  style={styles.actionButton}
+                  onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                  onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                >
+                  Nova Avaliação
+                </button>
+              </div>
+              
+              <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+                <div style={styles.card}>
+                  <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px' }}>Lista de Avaliações</h3>
+                  <table style={styles.table}>
+                    <thead>
+                      <tr>
+                        <th style={styles.tableHeader}>Tipo</th>
+                        <th style={styles.tableHeader}>Cliente</th>
+                        <th style={styles.tableHeader}>Status</th>
+                        <th style={styles.tableHeader}>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <Avaliacao />
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          );
+
+        case 'laudos':
+          return (
+            <>
+              <div style={styles.pageHeader}>
+                <h1 style={styles.pageTitle}>Gestão de Laudos</h1>
+                <button 
+                  style={styles.actionButton}
+                  onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                  onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                >
+                  Novo Laudo
+                </button>
+              </div>
+              
+              <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+                <div style={styles.card}>
+                  <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px' }}>Lista de Laudos</h3>
+                  <table style={styles.table}>
+                    <thead>
+                      <tr>
+                        <th style={styles.tableHeader}>Número</th>
+                        <th style={styles.tableHeader}>Cliente</th>
+                        <th style={styles.tableHeader}>Status</th>
+                        <th style={styles.tableHeader}>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <Laudos />
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          );
+
+        default:
+          return (
+            <>
+              <div style={styles.pageHeader}>
+                <h1 style={styles.pageTitle}>
+                  {activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
+                </h1>
+              </div>
+              
+              <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+                <div style={styles.card}>
+                  <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                    <div style={{
+                      width: '80px',
+                      height: '80px',
+                      background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 20px',
+                      color: '#059669'
+                    }}>
+                      {icons.file}
+                    </div>
+                    <h3 style={{ fontSize: '24px', fontWeight: '600', color: '#1e293b', marginBottom: '16px' }}>
+                      Módulo {activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
+                    </h3>
+                    <p style={{ color: '#64748b', fontSize: '16px', lineHeight: '1.6' }}>
+                      Este módulo está em desenvolvimento. Em breve você poderá gerenciar seus {activeSection}s aqui.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </>
+          );
+      }
+    };
+
+    return (
+      <div style={styles.mainContent}>
+        <div style={styles.contentArea}>
+          {renderContent()}
+        </div>
+      </div>
+    );
+  };
+
+  // Renderização principal
+  if (!isAuthenticated) {
+    return (
+      <div style={styles.appContainer}>
+        <LoginPage />
+      </div>
+    );
+  }
+
+  return (
+    <div style={styles.appContainer}>
+      <div style={styles.mainAppContainer}>
+        <Sidebar />
+        <MainContent />
+      </div>
+      <NovoCliente
+        isOpen={showNovoCliente}
+        onClose={() => setShowNovoCliente(false)}
+        onClienteCreated={() => {
+          // Callback para atualizar lista de clientes se necessário
+          console.log('Cliente criado com sucesso!');
+        }}
+      />
+      
+      <NovoProjeto
+         isOpen={showNovoProjeto}
+         onClose={() => setShowNovoProjeto(false)}
+         onProjetoCreated={() => {
+           // Callback para atualizar lista de projetos se necessário
+           console.log('Projeto criado com sucesso!');
+         }}
+       />
+       
+       <NovoOrcamento
+         isOpen={showNovoOrcamento}
+         onClose={() => setShowNovoOrcamento(false)}
+         onOrcamentoCreated={() => {
+           // Callback para atualizar lista de orçamentos se necessário
+           console.log('Orçamento criado com sucesso!');
+         }}
+       />
+    </div>
+  );
+};
+
+export default SaaSApp;
