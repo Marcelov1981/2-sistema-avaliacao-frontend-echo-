@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import Clientes from './assets/Cliente';
-import Orcamentos from './assets/Orçamentos';
-import Projetos from './assets/Projetos';
-import Avaliacao from './assets/Avaliacao';
-import Laudos from './assets/Laudos';
-import NovoCliente from './assets/NovoCliente';
-import NovoProjeto from './assets/NovoProjeto';
-import NovoOrcamento from './assets/NovoOrcamento';
+import Clientes from './components/Cliente';
+import Orcamentos from './components/Orçamentos';
+import Projetos from './components/Projetos';
+import Avaliacao from './components/Avaliacao';
+import Laudos from './components/Laudos';
+import NovoCliente from './components/NovoCliente';
+import NovoProjeto from './components/NovoProjeto';
+import NovoOrcamento from './components/NovoOrcamento';
 
 const SaaSApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
