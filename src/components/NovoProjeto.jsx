@@ -59,7 +59,7 @@ const NovoProjeto = ({ isOpen, onClose, onProjetoCreated }) => {
 
     try {
       const response = await axios.post(
-        'https://geomind-service-production.up.railway.app/api/v1/projetos',
+        'https://geomind-service-production.up.railway.app/api/v1/realstate',
         formData
       );
       
