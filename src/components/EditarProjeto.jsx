@@ -3,46 +3,84 @@ import axios from 'axios';
 import Modal from './Modal';
 import ImageUpload from './ImageUpload';
 
-const NovoProjeto = ({ isOpen, onClose, onProjetoCreated }) => {
+const EditarProjeto = ({ isOpen, onClose, onSuccess, projeto }) => {
   const [formData, setFormData] = useState({
     nome: '',
     cliente_id: '',
-    tipo_imovel: 'residencial',
+    tipo_imovel: '',
+    finalidade: '',
     endereco_imovel: '',
     cidade_imovel: '',
     estado_imovel: '',
     cep_imovel: '',
     area_terreno: '',
     area_construida: '',
-    finalidade_avaliacao: 'compra_venda',
+    valor_estimado: '',
     prazo_entrega: '',
     observacoes: ''
   });
+  
   const [clientes, setClientes] = useState([]);
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [loadingClientes, setLoadingClientes] = useState(false);
   const [error, setError] = useState('');
 
-  // Carregar lista de clientes quando o modal abrir
+  const tiposImovel = [
+    'Residencial',
+    'Comercial',
+    'Industrial',
+    'Rural',
+    'Terreno',
+    'Apartamento',
+    'Casa',
+    'Galpão',
+    'Loja',
+    'Sala Comercial'
+  ];
+
+  const finalidades = [
+    'Compra e Venda',
+    'Financiamento',
+    'Seguro',
+    'Inventário',
+    'Partilha',
+    'Garantia',
+    'Locação',
+    'Judicial',
+    'Administrativa'
+  ];
+
   useEffect(() => {
     if (isOpen) {
       fetchClientes();
+      if (projeto) {
+        setFormData({
+          nome: projeto.nome || '',
+          cliente_id: projeto.cliente_id || '',
+          tipo_imovel: projeto.tipo_imovel || '',
+          finalidade: projeto.finalidade || '',
+          endereco_imovel: projeto.endereco_imovel || '',
+          cidade_imovel: projeto.cidade_imovel || '',
+          estado_imovel: projeto.estado_imovel || '',
+          cep_imovel: projeto.cep_imovel || '',
+          area_terreno: projeto.area_terreno || '',
+          area_construida: projeto.area_construida || '',
+          valor_estimado: projeto.valor_estimado || '',
+          prazo_entrega: projeto.prazo_entrega || '',
+          observacoes: projeto.observacoes || ''
+        });
+        setImages(projeto.images || []);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, projeto]);
 
   const fetchClientes = async () => {
-    setLoadingClientes(true);
     try {
-      const response = await axios.get(
-        'https://geomind-service-production.up.railway.app/api/v1/clientes'
-      );
+      const response = await axios.get('http://localhost:3001/api/clientes');
       setClientes(response.data);
-    } catch (err) {
-      console.error('Erro ao carregar clientes:', err);
-      setError('Erro ao carregar lista de clientes.');
-    } finally {
-      setLoadingClientes(false);
+    } catch (error) {
+      console.error('Erro ao carregar clientes:', error);
+      setError('Erro ao carregar lista de clientes');
     }
   };
 
@@ -60,37 +98,36 @@ const NovoProjeto = ({ isOpen, onClose, onProjetoCreated }) => {
     setError('');
 
     try {
-      const response = await axios.post(
-        'https://geomind-service-production.up.railway.app/api/v1/realstate',
-        formData
-      );
+      const projetoData = {
+        ...formData,
+        images: images
+      };
+
+      await axios.put(`http://localhost:3001/api/projetos/${projeto.id}`, projetoData);
+      
+      onSuccess();
+      onClose();
       
       // Reset form
       setFormData({
         nome: '',
         cliente_id: '',
-        tipo_imovel: 'residencial',
+        tipo_imovel: '',
+        finalidade: '',
         endereco_imovel: '',
         cidade_imovel: '',
         estado_imovel: '',
         cep_imovel: '',
         area_terreno: '',
         area_construida: '',
-        finalidade_avaliacao: 'compra_venda',
+        valor_estimado: '',
         prazo_entrega: '',
         observacoes: ''
       });
       setImages([]);
-      
-      // Callback para atualizar lista
-      if (onProjetoCreated) {
-        onProjetoCreated(response.data);
-      }
-      
-      onClose();
-    } catch (err) {
-      setError('Erro ao criar projeto. Tente novamente.');
-      console.error('Erro ao criar projeto:', err);
+    } catch (error) {
+      console.error('Erro ao atualizar projeto:', error);
+      setError(error.response?.data?.message || 'Erro ao atualizar projeto');
     } finally {
       setLoading(false);
     }
@@ -187,7 +224,7 @@ const NovoProjeto = ({ isOpen, onClose, onProjetoCreated }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Novo Projeto">
+    <Modal isOpen={isOpen} onClose={onClose} title="Editar Projeto">
       <form onSubmit={handleSubmit} style={styles.form}>
         {error && <div style={styles.error}>{error}</div>}
         
@@ -216,12 +253,11 @@ const NovoProjeto = ({ isOpen, onClose, onProjetoCreated }) => {
               onChange={handleInputChange}
               style={styles.select}
               required
-              disabled={loadingClientes}
+              onFocus={(e) => e.target.style.borderColor = '#0d9488'}
+              onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
             >
-              <option value="">
-                {loadingClientes ? 'Carregando...' : 'Selecione um cliente'}
-              </option>
-              {clientes.map((cliente) => (
+              <option value="">Selecione um cliente</option>
+              {clientes.map(cliente => (
                 <option key={cliente.id} value={cliente.id}>
                   {cliente.nome}
                 </option>
@@ -232,45 +268,45 @@ const NovoProjeto = ({ isOpen, onClose, onProjetoCreated }) => {
 
         <div style={styles.row}>
           <div style={styles.formGroup}>
-            <label style={styles.label}>Tipo de Imóvel *</label>
+            <label style={styles.label}>Tipo do Imóvel *</label>
             <select
               name="tipo_imovel"
               value={formData.tipo_imovel}
               onChange={handleInputChange}
               style={styles.select}
               required
+              onFocus={(e) => e.target.style.borderColor = '#0d9488'}
+              onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
             >
-              <option value="residencial">Residencial</option>
-              <option value="comercial">Comercial</option>
-              <option value="industrial">Industrial</option>
-              <option value="rural">Rural</option>
-              <option value="terreno">Terreno</option>
+              <option value="">Selecione o tipo</option>
+              {tiposImovel.map(tipo => (
+                <option key={tipo} value={tipo}>{tipo}</option>
+              ))}
             </select>
           </div>
           <div style={styles.formGroup}>
-            <label style={styles.label}>Finalidade da Avaliação *</label>
+            <label style={styles.label}>Finalidade *</label>
             <select
-              name="finalidade_avaliacao"
-              value={formData.finalidade_avaliacao}
+              name="finalidade"
+              value={formData.finalidade}
               onChange={handleInputChange}
               style={styles.select}
               required
+              onFocus={(e) => e.target.style.borderColor = '#0d9488'}
+              onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
             >
-              <option value="compra_venda">Compra e Venda</option>
-              <option value="financiamento">Financiamento</option>
-              <option value="aluguel">Aluguel</option>
-              <option value="seguro">Seguro</option>
-              <option value="judicial">Judicial</option>
-              <option value="inventario">Inventário</option>
-              <option value="outros">Outros</option>
+              <option value="">Selecione a finalidade</option>
+              {finalidades.map(finalidade => (
+                <option key={finalidade} value={finalidade}>{finalidade}</option>
+              ))}
             </select>
           </div>
         </div>
 
         <div style={styles.sectionTitle}>Localização do Imóvel</div>
-
+        
         <div style={styles.formGroup}>
-          <label style={styles.label}>Endereço do Imóvel *</label>
+          <label style={styles.label}>Endereço *</label>
           <input
             type="text"
             name="endereco_imovel"
@@ -312,14 +348,14 @@ const NovoProjeto = ({ isOpen, onClose, onProjetoCreated }) => {
             />
           </div>
           <div style={styles.formGroup}>
-            <label style={styles.label}>CEP *</label>
+            <label style={styles.label}>CEP</label>
             <input
               type="text"
               name="cep_imovel"
               value={formData.cep_imovel}
               onChange={handleInputChange}
               style={styles.input}
-              required
+              placeholder="00000-000"
               onFocus={(e) => e.target.style.borderColor = '#0d9488'}
               onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
             />
@@ -327,7 +363,7 @@ const NovoProjeto = ({ isOpen, onClose, onProjetoCreated }) => {
         </div>
 
         <div style={styles.sectionTitle}>Características do Imóvel</div>
-
+        
         <div style={styles.row}>
           <div style={styles.formGroup}>
             <label style={styles.label}>Área do Terreno (m²)</label>
@@ -337,6 +373,7 @@ const NovoProjeto = ({ isOpen, onClose, onProjetoCreated }) => {
               value={formData.area_terreno}
               onChange={handleInputChange}
               style={styles.input}
+              placeholder="0"
               step="0.01"
               min="0"
               onFocus={(e) => e.target.style.borderColor = '#0d9488'}
@@ -351,6 +388,25 @@ const NovoProjeto = ({ isOpen, onClose, onProjetoCreated }) => {
               value={formData.area_construida}
               onChange={handleInputChange}
               style={styles.input}
+              placeholder="0"
+              step="0.01"
+              min="0"
+              onFocus={(e) => e.target.style.borderColor = '#0d9488'}
+              onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+            />
+          </div>
+        </div>
+
+        <div style={styles.row}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Valor Estimado (R$)</label>
+            <input
+              type="number"
+              name="valor_estimado"
+              value={formData.valor_estimado}
+              onChange={handleInputChange}
+              style={styles.input}
+              placeholder="0,00"
               step="0.01"
               min="0"
               onFocus={(e) => e.target.style.borderColor = '#0d9488'}
@@ -412,7 +468,7 @@ const NovoProjeto = ({ isOpen, onClose, onProjetoCreated }) => {
             onMouseOver={(e) => !loading && (e.target.style.backgroundColor = '#0f766e')}
             onMouseOut={(e) => !loading && (e.target.style.backgroundColor = '#0d9488')}
           >
-            {loading ? 'Criando...' : 'Criar Projeto'}
+            {loading ? 'Atualizando...' : 'Atualizar Projeto'}
           </button>
         </div>
       </form>
@@ -420,4 +476,4 @@ const NovoProjeto = ({ isOpen, onClose, onProjetoCreated }) => {
   );
 };
 
-export default NovoProjeto;
+export default EditarProjeto;

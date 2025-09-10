@@ -1,61 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from './Modal';
-import ImageUpload from './ImageUpload';
 
-const NovoOrcamento = ({ isOpen, onClose, onOrcamentoCreated }) => {
+const NovaAvaliacao = ({ isOpen, onClose, onAvaliacaoCreated }) => {
   const [formData, setFormData] = useState({
-    projetoId: '',
-    descricao: '',
-    tipoAvaliacao: '',
-    valorEstimado: '',
-    prazoEntrega: '',
-    metodologia: '',
-    observacoes: ''
+    orcamentoId: '',
+    dataAvaliacao: '',
+    valorAvaliado: '',
+    metodologiaUtilizada: '',
+    observacoesTecnicas: '',
+    conclusoes: '',
+    status: 'em_andamento'
   });
 
-  const [projetos, setProjetos] = useState([]);
-  const [images, setImages] = useState([]);
+  const [orcamentos, setOrcamentos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [loadingProjetos, setLoadingProjetos] = useState(false);
-
-  const tiposAvaliacao = [
-    'Avaliação para Financiamento',
-    'Avaliação para Venda',
-    'Avaliação para Aluguel',
-    'Avaliação para Seguro',
-    'Avaliação Judicial',
-    'Avaliação para Garantia',
-    'Reavaliação',
-    'Laudo de Vistoria',
-    'Parecer Técnico'
-  ];
+  const [loadingOrcamentos, setLoadingOrcamentos] = useState(false);
 
   const metodologias = [
     'Método Comparativo Direto',
     'Método da Renda',
     'Método do Custo',
     'Método Evolutivo',
-    'Método Involutivo'
+    'Método Involutivo',
+    'Método Misto'
+  ];
+
+  const statusOptions = [
+    { value: 'em_andamento', label: 'Em Andamento' },
+    { value: 'concluida', label: 'Concluída' },
+    { value: 'revisao', label: 'Em Revisão' }
   ];
 
   useEffect(() => {
     if (isOpen) {
-      fetchProjetos();
+      fetchOrcamentos();
     }
   }, [isOpen]);
 
-  const fetchProjetos = async () => {
-    setLoadingProjetos(true);
+  const fetchOrcamentos = async () => {
+    setLoadingOrcamentos(true);
     try {
-      const response = await axios.get('https://geomind-service-production.up.railway.app/api/v1/projetos');
-      setProjetos(response.data || []);
+      const response = await axios.get('https://geomind-service-production.up.railway.app/api/v1/orcamentos');
+      setOrcamentos(response.data || []);
     } catch (error) {
-      console.error('Erro ao carregar projetos:', error);
-      setError('Erro ao carregar lista de projetos');
+      console.error('Erro ao carregar orçamentos:', error);
+      setError('Erro ao carregar lista de orçamentos');
     } finally {
-      setLoadingProjetos(false);
+      setLoadingOrcamentos(false);
     }
   };
 
@@ -74,32 +67,31 @@ const NovoOrcamento = ({ isOpen, onClose, onOrcamentoCreated }) => {
 
     try {
       const response = await axios.post(
-        'https://geomind-service-production.up.railway.app/api/v1/orcamentos',
+        'https://geomind-service-production.up.railway.app/api/v1/avaliacoes',
         {
           ...formData,
-          valorEstimado: parseFloat(formData.valorEstimado) || 0
+          valorAvaliado: parseFloat(formData.valorAvaliado) || 0
         }
       );
 
       if (response.status === 201 || response.status === 200) {
         // Reset form
         setFormData({
-          projetoId: '',
-          descricao: '',
-          tipoAvaliacao: '',
-          valorEstimado: '',
-          prazoEntrega: '',
-          metodologia: '',
-          observacoes: ''
+          orcamentoId: '',
+          dataAvaliacao: '',
+          valorAvaliado: '',
+          metodologiaUtilizada: '',
+          observacoesTecnicas: '',
+          conclusoes: '',
+          status: 'em_andamento'
         });
-        setImages([]);
         
-        onOrcamentoCreated && onOrcamentoCreated();
+        onAvaliacaoCreated && onAvaliacaoCreated();
         onClose();
       }
     } catch (error) {
-      console.error('Erro ao criar orçamento:', error);
-      setError(error.response?.data?.message || 'Erro ao criar orçamento');
+      console.error('Erro ao criar avaliação:', error);
+      setError(error.response?.data?.message || 'Erro ao criar avaliação');
     } finally {
       setLoading(false);
     }
@@ -143,7 +135,7 @@ const NovoOrcamento = ({ isOpen, onClose, onOrcamentoCreated }) => {
       border: '1px solid #d1d5db',
       borderRadius: '8px',
       fontSize: '14px',
-      minHeight: '80px',
+      minHeight: '100px',
       resize: 'vertical',
       fontFamily: 'inherit',
       outline: 'none'
@@ -174,7 +166,7 @@ const NovoOrcamento = ({ isOpen, onClose, onOrcamentoCreated }) => {
       border: '1px solid #d1d5db'
     },
     submitButton: {
-      backgroundColor: '#3b82f6',
+      backgroundColor: '#8b5cf6',
       color: 'white'
     },
     error: {
@@ -190,71 +182,53 @@ const NovoOrcamento = ({ isOpen, onClose, onOrcamentoCreated }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Novo Orçamento">
+    <Modal isOpen={isOpen} onClose={onClose} title="Nova Avaliação">
       <form onSubmit={handleSubmit} style={styles.form}>
         <div style={styles.formGroup}>
-          <label style={styles.label}>Projeto *</label>
-          {loadingProjetos ? (
-            <div style={styles.loading}>Carregando projetos...</div>
+          <label style={styles.label}>Orçamento *</label>
+          {loadingOrcamentos ? (
+            <div style={styles.loading}>Carregando orçamentos...</div>
           ) : (
             <select
-              name="projetoId"
-              value={formData.projetoId}
+              name="orcamentoId"
+              value={formData.orcamentoId}
               onChange={handleInputChange}
               style={styles.select}
               required
             >
-              <option value="">Selecione um projeto</option>
-              {projetos.map(projeto => (
-                <option key={projeto.id} value={projeto.id}>
-                  {projeto.nome} - {projeto.cliente?.nome || 'Cliente não informado'}
+              <option value="">Selecione um orçamento</option>
+              {orcamentos.map(orcamento => (
+                <option key={orcamento.id} value={orcamento.id}>
+                  {orcamento.descricao} - {orcamento.projeto?.nome || 'Projeto não informado'}
                 </option>
               ))}
             </select>
           )}
         </div>
 
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Descrição do Orçamento *</label>
-          <input
-            type="text"
-            name="descricao"
-            value={formData.descricao}
-            onChange={handleInputChange}
-            style={styles.input}
-            placeholder="Ex: Avaliação de apartamento para financiamento"
-            required
-          />
-        </div>
-
         <div style={styles.row}>
           <div style={styles.formGroup}>
-            <label style={styles.label}>Tipo de Avaliação *</label>
-            <select
-              name="tipoAvaliacao"
-              value={formData.tipoAvaliacao}
+            <label style={styles.label}>Data da Avaliação *</label>
+            <input
+              type="date"
+              name="dataAvaliacao"
+              value={formData.dataAvaliacao}
               onChange={handleInputChange}
-              style={styles.select}
+              style={styles.input}
               required
-            >
-              <option value="">Selecione o tipo</option>
-              {tiposAvaliacao.map(tipo => (
-                <option key={tipo} value={tipo}>{tipo}</option>
-              ))}
-            </select>
+            />
           </div>
-
           <div style={styles.formGroup}>
-            <label style={styles.label}>Valor Estimado (R$) *</label>
+            <label style={styles.label}>Valor Avaliado (R$) *</label>
             <input
               type="number"
-              name="valorEstimado"
-              value={formData.valorEstimado}
+              name="valorAvaliado"
+              value={formData.valorAvaliado}
               onChange={handleInputChange}
               style={styles.input}
               placeholder="0,00"
-              min="0"
               step="0.01"
+              min="0"
               required
             />
           </div>
@@ -262,50 +236,61 @@ const NovoOrcamento = ({ isOpen, onClose, onOrcamentoCreated }) => {
 
         <div style={styles.row}>
           <div style={styles.formGroup}>
-            <label style={styles.label}>Prazo de Entrega *</label>
-            <input
-              type="date"
-              name="prazoEntrega"
-              value={formData.prazoEntrega}
-              onChange={handleInputChange}
-              style={styles.input}
-              required
-            />
-          </div>
-
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Metodologia</label>
+            <label style={styles.label}>Metodologia Utilizada *</label>
             <select
-              name="metodologia"
-              value={formData.metodologia}
+              name="metodologiaUtilizada"
+              value={formData.metodologiaUtilizada}
               onChange={handleInputChange}
               style={styles.select}
+              required
             >
               <option value="">Selecione a metodologia</option>
-              {metodologias.map(metodologia => (
-                <option key={metodologia} value={metodologia}>{metodologia}</option>
+              {metodologias.map((metodologia, index) => (
+                <option key={index} value={metodologia}>
+                  {metodologia}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Status *</label>
+            <select
+              name="status"
+              value={formData.status}
+              onChange={handleInputChange}
+              style={styles.select}
+              required
+            >
+              {statusOptions.map((status, index) => (
+                <option key={index} value={status.value}>
+                  {status.label}
+                </option>
               ))}
             </select>
           </div>
         </div>
 
         <div style={styles.formGroup}>
-          <label style={styles.label}>Observações</label>
+          <label style={styles.label}>Observações Técnicas</label>
           <textarea
-            name="observacoes"
-            value={formData.observacoes}
+            name="observacoesTecnicas"
+            value={formData.observacoesTecnicas}
             onChange={handleInputChange}
             style={styles.textarea}
-            placeholder="Informações adicionais sobre o orçamento..."
+            placeholder="Observações técnicas sobre a avaliação..."
           />
         </div>
 
-        <ImageUpload
-          images={images}
-          onImagesChange={setImages}
-          maxImages={8}
-          label="Anexar Documentos e Imagens"
-        />
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Conclusões</label>
+          <textarea
+            name="conclusoes"
+            value={formData.conclusoes}
+            onChange={handleInputChange}
+            style={styles.textarea}
+            placeholder="Conclusões da avaliação..."
+          />
+        </div>
 
         {error && <div style={styles.error}>{error}</div>}
 
@@ -313,17 +298,20 @@ const NovoOrcamento = ({ isOpen, onClose, onOrcamentoCreated }) => {
           <button
             type="button"
             onClick={onClose}
-            style={{...styles.button, ...styles.cancelButton}}
-            disabled={loading}
+            style={{ ...styles.button, ...styles.cancelButton }}
           >
             Cancelar
           </button>
           <button
             type="submit"
-            style={{...styles.button, ...styles.submitButton}}
             disabled={loading}
+            style={{ 
+              ...styles.button, 
+              ...styles.submitButton,
+              opacity: loading ? 0.7 : 1
+            }}
           >
-            {loading ? 'Criando...' : 'Criar Orçamento'}
+            {loading ? 'Criando...' : 'Criar Avaliação'}
           </button>
         </div>
       </form>
@@ -331,4 +319,4 @@ const NovoOrcamento = ({ isOpen, onClose, onOrcamentoCreated }) => {
   );
 };
 
-export default NovoOrcamento;
+export default NovaAvaliacao;

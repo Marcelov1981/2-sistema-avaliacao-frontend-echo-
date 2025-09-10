@@ -1,37 +1,40 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import EditarProjeto from './EditarProjeto';
 
 function Projetos() {
   const [projetosList, setProjetosList] = useState([]);
   const [clientesList, setClientesList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [projetoParaEditar, setProjetoParaEditar] = useState(null);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Buscar projetos e clientes em paralelo
+      const [projetosResponse, clientesResponse] = await Promise.all([
+        axios.get("https://geomind-service-production.up.railway.app/api/v1/realstate"),
+        axios.get("https://geomind-service-production.up.railway.app/api/v1/clientes")
+      ]);
+      
+      console.log("Dados de projetos recebidos:", projetosResponse.data);
+      console.log("Dados de clientes recebidos:", clientesResponse.data);
+      
+      setProjetosList(projetosResponse.data);
+      setClientesList(clientesResponse.data);
+    } catch (error) {
+      console.error("Erro ao buscar dados:", error);
+      setError("Erro ao carregar dados. Tente novamente mais tarde.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Buscar projetos e clientes em paralelo
-        const [projetosResponse, clientesResponse] = await Promise.all([
-          axios.get("https://geomind-service-production.up.railway.app/api/v1/realstate"),
-          axios.get("https://geomind-service-production.up.railway.app/api/v1/clientes")
-        ]);
-        
-        console.log("Dados de projetos recebidos:", projetosResponse.data);
-        console.log("Dados de clientes recebidos:", clientesResponse.data);
-        
-        setProjetosList(projetosResponse.data);
-        setClientesList(clientesResponse.data);
-      } catch (error) {
-        console.error("Erro ao buscar dados:", error);
-        setError("Erro ao carregar dados. Tente novamente mais tarde.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
 
@@ -61,6 +64,12 @@ function Projetos() {
     );
   }
 
+  const handleEditSuccess = () => {
+    fetchData(); // Recarrega a lista de projetos
+    setEditModalOpen(false);
+    setProjetoParaEditar(null);
+  };
+
   return (
     <>
       {projetosList.map((projeto, index) => ( 
@@ -78,7 +87,10 @@ function Projetos() {
           <td>{projeto.prazo_entrega ? new Date(projeto.prazo_entrega).toLocaleDateString('pt-BR') : 'N/A'}</td>
           <td>
             <button 
-              onClick={() => console.log('Editar projeto:', projeto.id)}
+              onClick={() => {
+                setProjetoParaEditar(projeto);
+                setEditModalOpen(true);
+              }}
               style={{
                 background: 'none',
                 border: 'none',
@@ -93,6 +105,15 @@ function Projetos() {
           </td>
         </tr> 
       ))}
+      <EditarProjeto
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setProjetoParaEditar(null);
+        }}
+        onSuccess={handleEditSuccess}
+        projeto={projetoParaEditar}
+      />
     </>
   );
 }
