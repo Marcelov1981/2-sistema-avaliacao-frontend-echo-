@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Clientes from './components/Cliente';
 import Orcamentos from './components/Orçamentos';
 import Projetos from './components/Projetos';
@@ -26,20 +26,38 @@ const SaaSApp = () => {
     }
   }, []);
 
-  const handleAuth = (e) => {
+  // Handlers otimizados para inputs
+  const handleEmailChange = useCallback((e) => {
+    setLoginForm(prev => ({
+      ...prev,
+      email: e.target.value
+    }));
+  }, []);
+
+  const handlePasswordChange = useCallback((e) => {
+    const newValue = e.target.value.slice(0, 10);
+    setLoginForm(prev => ({
+      ...prev,
+      password: newValue
+    }));
+  }, []);
+
+  const handleAuth = useCallback((e) => {
     e.preventDefault();
-    if (loginForm.email && loginForm.password) {
+    if (loginForm.email && loginForm.password && loginForm.password.length >= 6 && loginForm.password.length <= 10) {
       setIsAuthenticated(true);
       sessionStorage.setItem('isAuthenticated', 'true');
       setLoginForm({ email: '', password: '' });
+    } else if (loginForm.password.length < 6 || loginForm.password.length > 10) {
+      alert('A senha deve ter entre 6 e 10 caracteres.');
     }
-  };
+  }, [loginForm.email, loginForm.password]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     setIsAuthenticated(false);
     sessionStorage.removeItem('isAuthenticated');
     setActiveSection('dashboard');
-  };
+  }, []);
 
   // Reset global styles
   useEffect(() => {
@@ -352,8 +370,9 @@ const SaaSApp = () => {
               type="email"
               placeholder="Email"
               value={loginForm.email}
-              onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
+              onChange={handleEmailChange}
               style={{ ...styles.input, paddingLeft: '50px', marginBottom: 0 }}
+              autoComplete="off"
               required
             />
           </div>
@@ -368,10 +387,11 @@ const SaaSApp = () => {
             </div>
             <input
               type="password"
-              placeholder="Senha (máx. 8 caracteres)"
+              placeholder="Senha (6-10 caracteres)"
               value={loginForm.password}
-              onChange={(e) => setLoginForm({...loginForm, password: e.target.value.slice(0, 8)})}
-              maxLength={8}
+              onChange={handlePasswordChange}
+              minLength={6}
+              maxLength={10}
               style={{ ...styles.input, paddingLeft: '50px', marginBottom: 0 }}
               required
             />
