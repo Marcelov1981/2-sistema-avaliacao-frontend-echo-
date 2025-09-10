@@ -3,33 +3,49 @@ import axios from "axios";
 
 function Projetos() {
   const [projetosList, setProjetosList] = useState([]);
+  const [clientesList, setClientesList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchProjetos = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await axios.get("https://geomind-service-production.up.railway.app/api/v1/projetos");
-        console.log("Dados de projetos recebidos:", response.data); // Debug
-        setProjetosList(response.data);
+        
+        // Buscar projetos e clientes em paralelo
+        const [projetosResponse, clientesResponse] = await Promise.all([
+          axios.get("https://geomind-service-production.up.railway.app/api/v1/realstate"),
+          axios.get("https://geomind-service-production.up.railway.app/api/v1/clientes")
+        ]);
+        
+        console.log("Dados de projetos recebidos:", projetosResponse.data);
+        console.log("Dados de clientes recebidos:", clientesResponse.data);
+        
+        setProjetosList(projetosResponse.data);
+        setClientesList(clientesResponse.data);
       } catch (error) {
-        console.error("Erro ao buscar projetos:", error);
-        setError("Erro ao carregar projetos. Tente novamente mais tarde.");
+        console.error("Erro ao buscar dados:", error);
+        setError("Erro ao carregar dados. Tente novamente mais tarde.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProjetos();
+    fetchData();
   }, []);
+
+  // Função para buscar nome do cliente pelo ID
+  const getClienteNome = (clienteId) => {
+    const cliente = clientesList.find(c => c.id === clienteId);
+    return cliente ? cliente.nome : 'Cliente não encontrado';
+  };
 
   if (loading) {
     return (
       <tr>
-        <td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>
-          Carregando projetos...
+        <td colSpan="12" style={{ textAlign: 'center', padding: '20px' }}>
+          Carregando dados...
         </td>
       </tr>
     );
@@ -38,7 +54,7 @@ function Projetos() {
   if (error) {
     return (
       <tr>
-        <td colSpan="4" style={{ textAlign: 'center', padding: '20px', color: '#dc2626' }}>
+        <td colSpan="12" style={{ textAlign: 'center', padding: '20px', color: '#dc2626' }}>
           {error}
         </td>
       </tr>
@@ -50,19 +66,16 @@ function Projetos() {
       {projetosList.map((projeto, index) => ( 
         <tr key={index}>
           <td>{projeto.nome || 'N/A'}</td>
-          <td>{projeto.cliente || 'N/A'}</td>
-          <td> 
-            <span style={{
-              background: projeto.status === 'concluido' ? '#dcfce7' : projeto.status === 'em_andamento' ? '#fef3c7' : '#fee2e2',
-              color: projeto.status === 'concluido' ? '#166534' : projeto.status === 'em_andamento' ? '#92400e' : '#dc2626',
-              padding: '4px 8px',
-              borderRadius: '12px',
-              fontSize: '12px',
-              fontWeight: '500'
-            }}>
-              {projeto.status}
-            </span>
-          </td>
+          <td>{getClienteNome(projeto.cliente_id)}</td>
+          <td>{projeto.tipo_imovel || 'N/A'}</td>
+          <td>{projeto.endereco_imovel || 'N/A'}</td>
+          <td>{projeto.cidade_imovel || 'N/A'}</td>
+          <td>{projeto.estado_imovel || 'N/A'}</td>
+          <td>{projeto.cep_imovel || 'N/A'}</td>
+          <td>{projeto.area_terreno ? `${projeto.area_terreno} m²` : 'N/A'}</td>
+          <td>{projeto.area_construida ? `${projeto.area_construida} m²` : 'N/A'}</td>
+          <td>{projeto.finalidade_avaliacao || 'N/A'}</td>
+          <td>{projeto.prazo_entrega ? new Date(projeto.prazo_entrega).toLocaleDateString('pt-BR') : 'N/A'}</td>
           <td>
             <button 
               onClick={() => console.log('Editar projeto:', projeto.id)}
