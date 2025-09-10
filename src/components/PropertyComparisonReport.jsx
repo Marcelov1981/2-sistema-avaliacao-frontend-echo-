@@ -9,21 +9,35 @@ const PropertyComparisonReport = ({ comparisonData, onExport }) => {
   const [valueAnalysis, setValueAnalysis] = useState(null);
 
   useEffect(() => {
+    console.log('PropertyComparisonReport - comparisonData recebido:', comparisonData);
     if (comparisonData) {
+      console.log('PropertyComparisonReport - Gerando relatório...');
       generateReport(comparisonData);
+    } else {
+      console.log('PropertyComparisonReport - Nenhum dado de comparação disponível');
     }
   }, [comparisonData]);
 
   // Gera relatório completo de análise
   const generateReport = (data) => {
-    const analysis = analyzePropertyValue(data);
-    setReportData(analysis.report);
-    setValueAnalysis(analysis.valueComparison);
+    try {
+      console.log('PropertyComparisonReport - Iniciando análise com dados:', data);
+      const analysis = analyzePropertyValue(data);
+      console.log('PropertyComparisonReport - Análise gerada:', analysis);
+      setReportData(analysis.report);
+      setValueAnalysis(analysis.valueComparison);
+      console.log('PropertyComparisonReport - Estados atualizados com sucesso');
+    } catch (error) {
+      console.error('PropertyComparisonReport - Erro ao gerar relatório:', error);
+    }
   };
 
   // Analisa o valor do imóvel baseado nas características das imagens
   const analyzePropertyValue = (data) => {
-    const { comparisons, bestMatch, averageSimilarity } = data;
+    const { comparisons, summary } = data;
+    const { bestMatches } = summary;
+    const bestMatch = bestMatches && bestMatches.length > 0 ? bestMatches[0] : null;
+    const averageSimilarity = bestMatch ? bestMatch.similarity.overall : 0;
     
     // Calcular scores de diferentes aspectos
     const qualityScore = calculateQualityScore(comparisons);
@@ -59,7 +73,7 @@ const PropertyComparisonReport = ({ comparisonData, onExport }) => {
         metrics: {
           totalComparisons: comparisons.length,
           averageSimilarity,
-          bestMatchSimilarity: bestMatch.similarity
+          bestMatchSimilarity: bestMatch && bestMatch.similarity && bestMatch.similarity.overall ? bestMatch.similarity.overall : 0
         }
       },
       valueComparison: valueAnalysis
@@ -71,9 +85,9 @@ const PropertyComparisonReport = ({ comparisonData, onExport }) => {
     if (!comparisons.length) return 0;
     
     const avgQuality = comparisons.reduce((sum, comp) => {
-      const webQuality = comp.analysis.features.image1.qualityScore.overall;
-      const dbQuality = comp.analysis.features.image2.qualityScore.overall;
-      return sum + Math.max(webQuality, dbQuality); // Usar a melhor qualidade
+      // Usar qualityComparison que existe na estrutura
+      const qualityScore = comp.qualityComparison ? comp.qualityComparison.overall : 50;
+      return sum + qualityScore;
     }, 0) / comparisons.length;
     
     return Math.round(avgQuality);
@@ -83,7 +97,10 @@ const PropertyComparisonReport = ({ comparisonData, onExport }) => {
   const calculateConsistencyScore = (comparisons) => {
     if (!comparisons.length) return 0;
     
-    const avgSimilarity = comparisons.reduce((sum, comp) => sum + comp.similarity, 0) / comparisons.length;
+    const avgSimilarity = comparisons.reduce((sum, comp) => {
+      const similarity = comp.similarity && comp.similarity.overall ? comp.similarity.overall : 0;
+      return sum + similarity;
+    }, 0) / comparisons.length;
     return Math.round(avgSimilarity);
   };
 
@@ -91,23 +108,13 @@ const PropertyComparisonReport = ({ comparisonData, onExport }) => {
   const calculateVisualAppealScore = (comparisons) => {
     if (!comparisons.length) return 0;
     
-    const avgColorfulness = comparisons.reduce((sum, comp) => {
-      const webColor = comp.analysis.features.image1.colorAnalysis.colorfulness;
-      const dbColor = comp.analysis.features.image2.colorAnalysis.colorfulness;
-      return sum + Math.max(webColor, dbColor);
+    // Usar dados de similaridade como proxy para apelo visual
+    const avgVisualScore = comparisons.reduce((sum, comp) => {
+      const visualScore = comp.similarity && comp.similarity.overall ? comp.similarity.overall : 50;
+      return sum + visualScore;
     }, 0) / comparisons.length;
     
-    const avgBrightness = comparisons.reduce((sum, comp) => {
-      const webBright = comp.analysis.features.image1.brightness;
-      const dbBright = comp.analysis.features.image2.brightness;
-      return sum + Math.max(webBright, dbBright);
-    }, 0) / comparisons.length;
-    
-    // Score baseado em colorfulness e brightness ideal (não muito escuro, não muito claro)
-    const colorScore = Math.min(avgColorfulness / 50 * 100, 100);
-    const brightScore = 100 - Math.abs(avgBrightness - 128) / 128 * 100;
-    
-    return Math.round((colorScore + brightScore) / 2);
+    return Math.round(avgVisualScore);
   };
 
   // Calcula score de autenticidade
@@ -115,7 +122,10 @@ const PropertyComparisonReport = ({ comparisonData, onExport }) => {
     if (!comparisons.length) return 0;
     
     // Baseado na consistência entre múltiplas imagens
-    const varianceInSimilarity = calculateVariance(comparisons.map(c => c.similarity));
+    const similarities = comparisons.map(c => {
+      return c.similarity && c.similarity.overall ? c.similarity.overall : 0;
+    });
+    const varianceInSimilarity = calculateVariance(similarities);
     const authenticityScore = Math.max(0, 100 - varianceInSimilarity);
     
     return Math.round(authenticityScore);

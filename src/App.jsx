@@ -10,6 +10,7 @@ import NovoOrcamento from './components/NovoOrcamento';
 import NovoLaudo from './components/NovoLaudo';
 import NovaAvaliacao from './components/NovaAvaliacao';
 import PropertyAnalysisSystem from './components/PropertyAnalysisSystem';
+import AIImageAnalysis from './components/AIImageAnalysis';
 import { appStyles, getSidebarStyles, otherStyles } from './styles/appStyles';
 
 const SaaSApp = () => {
@@ -556,75 +557,7 @@ const SaaSApp = () => {
           );
 
         case 'analise-imagens':
-          return (
-            <>
-              <div style={styles.pageHeader}>
-                <h1 style={styles.pageTitle}>Análise Comparativa de Imagens</h1>
-                <button 
-                  style={styles.actionButton}
-                  onClick={() => setShowAnaliseImagens(true)}
-                  onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-                  onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
-                >
-                  Iniciar Análise
-                </button>
-              </div>
-              
-              <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-                <div style={styles.card}>
-                  <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px' }}>Sistema de Análise Comparativa</h3>
-                  <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                    <div style={{
-                      width: '80px',
-                      height: '80px',
-                      background: 'linear-gradient(135deg, #dbeafe, #bfdbfe)',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      margin: '0 auto 20px',
-                      color: '#2563eb'
-                    }}>
-                      {icons.image}
-                    </div>
-                    <h4 style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b', marginBottom: '16px' }}>
-                      Análise Inteligente de Imagens Imobiliárias
-                    </h4>
-                    <p style={{ color: '#64748b', marginBottom: '24px', lineHeight: '1.6' }}>
-                      Compare imagens de webscraping com seu banco de dados para análise de valor e autenticidade de imóveis.
-                      O sistema utiliza algoritmos avançados para detectar similaridades, qualidade e consistência visual.
-                    </p>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                      <div style={{ padding: '16px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                        <h5 style={{ fontWeight: '600', marginBottom: '8px', color: '#374151' }}>Qualidade de Imagem</h5>
-                        <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>Análise de resolução, nitidez e brilho</p>
-                      </div>
-                      <div style={{ padding: '16px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                        <h5 style={{ fontWeight: '600', marginBottom: '8px', color: '#374151' }}>Similaridade Visual</h5>
-                        <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>Comparação de características visuais</p>
-                      </div>
-                      <div style={{ padding: '16px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                        <h5 style={{ fontWeight: '600', marginBottom: '8px', color: '#374151' }}>Relatório de Avaliação</h5>
-                        <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>Geração automática de relatórios detalhados</p>
-                      </div>
-                    </div>
-                    <button 
-                      style={{
-                        ...styles.actionButton,
-                        fontSize: '16px',
-                        padding: '12px 24px'
-                      }}
-                      onClick={() => setShowAnaliseImagens(true)}
-                      onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-                      onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
-                    >
-                      Começar Análise
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </>
-          );
+          return <AIImageAnalysis />;
 
         default:
           return (

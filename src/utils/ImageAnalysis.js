@@ -312,6 +312,112 @@ class ImageAnalysis {
   }
 
   /**
+   * Compara conjuntos de imagens (webscraping vs database)
+   */
+  async compareImageSets(webscrapingImages, databaseImages) {
+    const results = {
+      timestamp: new Date().toISOString(),
+      webscrapingCount: webscrapingImages.length,
+      databaseCount: databaseImages.length,
+      comparisons: [],
+      summary: {
+        averageQuality: { webscraping: 0, database: 0 },
+        bestMatches: [],
+        qualityWinner: null,
+        recommendations: []
+      }
+    };
+
+    try {
+      // Extrair características de todas as imagens
+      const webFeatures = [];
+      const dbFeatures = [];
+
+      // Processar imagens de webscraping
+      for (const image of webscrapingImages) {
+        const features = await this.extractFeatures(image.url);
+        if (features) {
+          webFeatures.push({ ...features, image });
+        }
+      }
+
+      // Processar imagens do banco de dados
+      for (const image of databaseImages) {
+        const features = await this.extractFeatures(image.url);
+        if (features) {
+          dbFeatures.push({ ...features, image });
+        }
+      }
+
+      // Comparar cada imagem de webscraping com cada imagem do banco
+      for (const webFeature of webFeatures) {
+        for (const dbFeature of dbFeatures) {
+          const similarity = this.calculateSimilarity(webFeature, dbFeature);
+          results.comparisons.push({
+            webImage: webFeature.image,
+            dbImage: dbFeature.image,
+            similarity: similarity,
+            qualityComparison: this.compareQuality(webFeature, dbFeature)
+          });
+        }
+      }
+
+      // Calcular estatísticas
+      if (webFeatures.length > 0) {
+        results.summary.averageQuality.webscraping = 
+          webFeatures.reduce((sum, f) => sum + f.qualityScore, 0) / webFeatures.length;
+      }
+
+      if (dbFeatures.length > 0) {
+        results.summary.averageQuality.database = 
+          dbFeatures.reduce((sum, f) => sum + f.qualityScore, 0) / dbFeatures.length;
+      }
+
+      // Encontrar melhores matches
+      results.summary.bestMatches = results.comparisons
+        .sort((a, b) => b.similarity.overall - a.similarity.overall)
+        .slice(0, 5);
+
+      // Determinar vencedor de qualidade
+      results.summary.qualityWinner = 
+        results.summary.averageQuality.webscraping > results.summary.averageQuality.database 
+          ? 'webscraping' : 'database';
+
+      // Gerar recomendações
+      results.summary.recommendations = this.generateRecommendations(results);
+
+      return results;
+    } catch (error) {
+      console.error('Erro ao comparar conjuntos de imagens:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gera recomendações baseadas na análise
+   */
+  generateRecommendations(results) {
+    const recommendations = [];
+
+    if (results.summary.averageQuality.webscraping > 70) {
+      recommendations.push('Imagens de webscraping apresentam boa qualidade');
+    }
+
+    if (results.summary.averageQuality.database > 70) {
+      recommendations.push('Imagens do banco de dados apresentam boa qualidade');
+    }
+
+    if (results.summary.bestMatches.length > 0) {
+      const bestMatch = results.summary.bestMatches[0];
+      if (bestMatch.similarity.overall > 0.8) {
+        recommendations.push('Encontrada correspondência muito alta entre as imagens');
+      }
+    }
+
+    return recommendations;
+  }
+
+  /**
    * Gera relatório de análise para avaliação imobiliária
    */
   generatePropertyAnalysis(webscrapingImages, databaseImages) {

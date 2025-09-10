@@ -7,8 +7,8 @@ const ImageComparison = ({ visible, onClose, onAnalysisComplete }) => {
   const [analysisResults, setAnalysisResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [currentComparison, setCurrentComparison] = useState(null);
-  const [selectedWebImage, setSelectedWebImage] = useState(null);
-  const [selectedDbImage, setSelectedDbImage] = useState(null);
+  const [selectedWebImages, setSelectedWebImages] = useState([]);
+  const [selectedDbImages, setSelectedDbImages] = useState([]);
   
   const imageAnalysis = useRef(new ImageAnalysis());
 
@@ -184,13 +184,28 @@ const ImageComparison = ({ visible, onClose, onAnalysisComplete }) => {
                 key={image.id}
                 style={{
                   ...styles.imageCard,
-                  ...(selectedWebImage?.id === image.id || selectedDbImage?.id === image.id ? styles.selectedImage : {})
+                  ...((type === 'webscraping' && selectedWebImages.some(img => img.id === image.id)) || 
+                      (type === 'database' && selectedDbImages.some(img => img.id === image.id)) ? styles.selectedImage : {})
                 }}
                 onClick={() => {
                   if (type === 'webscraping') {
-                    setSelectedWebImage(image);
+                    setSelectedWebImages(prev => {
+                      const isSelected = prev.some(img => img.id === image.id);
+                      if (isSelected) {
+                        return prev.filter(img => img.id !== image.id);
+                      } else {
+                        return [...prev, image];
+                      }
+                    });
                   } else {
-                    setSelectedDbImage(image);
+                    setSelectedDbImages(prev => {
+                      const isSelected = prev.some(img => img.id === image.id);
+                      if (isSelected) {
+                        return prev.filter(img => img.id !== image.id);
+                      } else {
+                        return [...prev, image];
+                      }
+                    });
                   }
                 }}
               >
@@ -206,22 +221,27 @@ const ImageComparison = ({ visible, onClose, onAnalysisComplete }) => {
     );
   };
 
-  // Executar análise comparativa
+  // Executar análise completa
   const executeAnalysis = async () => {
     if (webscrapingImages.length === 0 || databaseImages.length === 0) {
-      alert('Carregue pelo menos uma imagem de cada tipo para executar a análise.');
+      alert('Adicione imagens em ambas as categorias antes de executar a análise.');
       return;
     }
 
     setLoading(true);
     try {
+      console.log('Executando análise completa com:', {
+        webImages: webscrapingImages.length,
+        dbImages: databaseImages.length
+      });
+      
       const results = await imageAnalysis.current.compareImageSets(
         webscrapingImages,
         databaseImages
       );
       
+      console.log('Resultados da análise completa:', results);
       setAnalysisResults(results);
-      alert('Análise concluída com sucesso!');
       
       // Chamar callback com os resultados
       if (onAnalysisComplete) {
@@ -235,21 +255,27 @@ const ImageComparison = ({ visible, onClose, onAnalysisComplete }) => {
     }
   };
 
-  // Comparar duas imagens específicas
+  // Comparar imagens selecionadas
   const compareSpecificImages = async () => {
-    if (!selectedWebImage || !selectedDbImage) {
-      alert('Selecione uma imagem de cada tipo para comparar.');
+    if (selectedWebImages.length === 0 || selectedDbImages.length === 0) {
+      alert('Selecione pelo menos uma imagem de cada tipo para comparar.');
       return;
     }
 
     setLoading(true);
     try {
-      const comparison = await imageAnalysis.current.compareImages(
-        selectedWebImage,
-        selectedDbImage
+      console.log('Iniciando comparação com:', {
+        webImages: selectedWebImages.length,
+        dbImages: selectedDbImages.length
+      });
+      
+      const results = await imageAnalysis.current.compareImageSets(
+        selectedWebImages,
+        selectedDbImages
       );
       
-      setCurrentComparison(comparison);
+      console.log('Resultados da comparação:', results);
+      setCurrentComparison(results);
       alert('Comparação concluída!');
     } catch (error) {
       console.error('Erro na comparação:', error);
@@ -265,8 +291,8 @@ const ImageComparison = ({ visible, onClose, onAnalysisComplete }) => {
     setDatabaseImages([]);
     setAnalysisResults(null);
     setCurrentComparison(null);
-    setSelectedWebImage(null);
-    setSelectedDbImage(null);
+    setSelectedWebImages([]);
+    setSelectedDbImages([]);
   };
 
   if (!visible) return null;
@@ -317,9 +343,9 @@ const ImageComparison = ({ visible, onClose, onAnalysisComplete }) => {
             <button 
               style={styles.button} 
               onClick={compareSpecificImages}
-              disabled={loading || !selectedWebImage || !selectedDbImage}
+              disabled={loading || selectedWebImages.length === 0 || selectedDbImages.length === 0}
             >
-              📊 Comparar Selecionadas
+              📊 Comparar Selecionadas ({selectedWebImages.length} vs {selectedDbImages.length})
             </button>
             
             <span style={{ color: '#666', fontSize: '14px' }}>
@@ -332,72 +358,87 @@ const ImageComparison = ({ visible, onClose, onAnalysisComplete }) => {
         {analysisResults && (
           <div style={{ backgroundColor: 'white', border: '1px solid #d9d9d9', borderRadius: '8px', padding: '16px', marginBottom: '24px' }}>
             <h3>Resultados da Análise Completa</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '16px' }}>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1890ff' }}>
-                  {(analysisResults.overallSimilarity * 100).toFixed(1)}%
+                  {analysisResults.summary?.averageQuality?.webscraping?.toFixed(1) || 0}%
                 </div>
-                <div style={{ fontSize: '12px', color: '#666' }}>Similaridade Geral</div>
+                <div style={{ fontSize: '12px', color: '#666' }}>Qualidade Webscraping</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#52c41a' }}>
-                  {(analysisResults.qualityScore * 100).toFixed(1)}%
+                  {analysisResults.summary?.averageQuality?.database?.toFixed(1) || 0}%
                 </div>
-                <div style={{ fontSize: '12px', color: '#666' }}>Qualidade Média</div>
+                <div style={{ fontSize: '12px', color: '#666' }}>Qualidade Database</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#faad14' }}>
-                  {(analysisResults.visualAppeal * 100).toFixed(1)}%
+                  {analysisResults.comparisons?.length || 0}
                 </div>
-                <div style={{ fontSize: '12px', color: '#666' }}>Apelo Visual</div>
+                <div style={{ fontSize: '12px', color: '#666' }}>Total Comparações</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#722ed1' }}>
-                  {analysisResults.bestMatches?.length || 0}
+                  {analysisResults.summary?.bestMatches?.length || 0}
                 </div>
                 <div style={{ fontSize: '12px', color: '#666' }}>Melhores Matches</div>
               </div>
             </div>
+            
+            {analysisResults.summary?.recommendations && analysisResults.summary.recommendations.length > 0 && (
+              <div style={{ backgroundColor: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '4px', padding: '12px' }}>
+                <h4 style={{ margin: '0 0 8px 0', color: '#389e0d' }}>Recomendações:</h4>
+                <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                  {analysisResults.summary.recommendations.map((rec, index) => (
+                    <li key={index} style={{ color: '#389e0d', fontSize: '14px' }}>{rec}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Comparação Específica */}
+        {/* Resultados da Comparação */}
         {currentComparison && (
           <div style={{ backgroundColor: 'white', border: '1px solid #d9d9d9', borderRadius: '8px', padding: '16px' }}>
-            <h3>Comparação Específica</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-              <div>
-                <h4>Imagem de Webscraping</h4>
-                <img src={selectedWebImage?.url} alt="Webscraping" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '4px' }} />
-                <p style={{ fontSize: '12px', color: '#666' }}>{selectedWebImage?.name}</p>
-              </div>
-              <div>
-                <h4>Imagem do Banco de Dados</h4>
-                <img src={selectedDbImage?.url} alt="Database" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '4px' }} />
-                <p style={{ fontSize: '12px', color: '#666' }}>{selectedDbImage?.name}</p>
-              </div>
-            </div>
-            
-            <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+            <h3>Resultados da Comparação</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '16px' }}>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1890ff' }}>
-                  {(currentComparison.similarity * 100).toFixed(1)}%
+                  {currentComparison.summary?.averageQuality?.webscraping?.toFixed(1) || 0}%
                 </div>
-                <div style={{ fontSize: '12px', color: '#666' }}>Similaridade</div>
+                <div style={{ fontSize: '12px', color: '#666' }}>Qualidade Webscraping</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#52c41a' }}>
-                  {(currentComparison.qualityDifference * 100).toFixed(1)}%
+                  {currentComparison.summary?.averageQuality?.database?.toFixed(1) || 0}%
                 </div>
-                <div style={{ fontSize: '12px', color: '#666' }}>Diferença de Qualidade</div>
+                <div style={{ fontSize: '12px', color: '#666' }}>Qualidade Database</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#faad14' }}>
-                  {currentComparison.recommendation || 'N/A'}
+                  {currentComparison.comparisons?.length || 0}
                 </div>
-                <div style={{ fontSize: '12px', color: '#666' }}>Recomendação</div>
+                <div style={{ fontSize: '12px', color: '#666' }}>Total Comparações</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#722ed1' }}>
+                  {currentComparison.summary?.bestMatches?.length || 0}
+                </div>
+                <div style={{ fontSize: '12px', color: '#666' }}>Melhores Matches</div>
               </div>
             </div>
+            
+            {currentComparison.summary?.recommendations && currentComparison.summary.recommendations.length > 0 && (
+              <div style={{ backgroundColor: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '4px', padding: '12px' }}>
+                <h4 style={{ margin: '0 0 8px 0', color: '#389e0d' }}>Recomendações:</h4>
+                <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                  {currentComparison.summary.recommendations.map((rec, index) => (
+                    <li key={index} style={{ color: '#389e0d', fontSize: '14px' }}>{rec}</li>
+                  ))}
+                </ul>
+              </div>
+             )}
           </div>
         )}
       </div>

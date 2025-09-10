@@ -217,7 +217,7 @@ const PropertyAnalysisSystem = ({ visible, onClose }) => {
                 Visualize o relatório completo da análise comparativa realizada.
               </p>
               {analysisData && (
-                <PropertyComparisonReport data={analysisData} />
+                <PropertyComparisonReport comparisonData={analysisData} />
               )}
             </div>
           </div>

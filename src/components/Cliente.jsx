@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import EditarCliente from './EditarCliente';
 
 function Clientes() {
   const [clientesList, setClientesList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [clienteParaEditar, setClienteParaEditar] = useState(null);
 
   useEffect(() => {
     const fetchClientes = async () => {
@@ -64,7 +67,10 @@ function Clientes() {
           </td>
           <td>
             <button 
-              onClick={() => console.log('Editar cliente:', cliente.id)}
+              onClick={() => {
+                setClienteParaEditar(cliente);
+                setEditModalOpen(true);
+              }}
               style={{
                 background: 'none',
                 border: 'none',
@@ -79,6 +85,25 @@ function Clientes() {
           </td>
         </tr> 
       ))}
+      
+      <EditarCliente
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setClienteParaEditar(null);
+        }}
+        onSuccess={(clienteAtualizado) => {
+          // Atualizar a lista de clientes
+          setClientesList(prev => 
+            prev.map(cliente => 
+              cliente.id === clienteAtualizado.id ? clienteAtualizado : cliente
+            )
+          );
+          setEditModalOpen(false);
+          setClienteParaEditar(null);
+        }}
+        cliente={clienteParaEditar}
+      />
     </>
    );
 }
