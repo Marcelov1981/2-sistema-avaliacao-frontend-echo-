@@ -3,9 +3,13 @@ import GeminiService from '../utils/GeminiService';
 import PDFGenerator from '../utils/PDFGenerator';
 
 const AIImageAnalysis = () => {
+  const [activeTab, setActiveTab] = useState('analysis');
   const [images, setImages] = useState([]);
+  const [databaseImages, setDatabaseImages] = useState([]);
+  const [webscrapingImages, setWebscrapingImages] = useState([]);
   const [customPrompt, setCustomPrompt] = useState('');
   const [analysisResult, setAnalysisResult] = useState(null);
+  const [comparisonResult, setComparisonResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [analysisType, setAnalysisType] = useState('single'); // single, multiple, comparison
@@ -35,6 +39,24 @@ const AIImageAnalysis = () => {
   // Remove imagem
   const removeImage = (index) => {
     setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDatabaseImageUpload = (event) => {
+    const files = Array.from(event.target.files);
+    setDatabaseImages(prev => [...prev, ...files]);
+  };
+
+  const handleWebscrapingImageUpload = (event) => {
+    const files = Array.from(event.target.files);
+    setWebscrapingImages(prev => [...prev, ...files]);
+  };
+
+  const removeDatabaseImage = (index) => {
+    setDatabaseImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeWebscrapingImage = (index) => {
+    setWebscrapingImages(prev => prev.filter((_, i) => i !== index));
   };
 
   // Limpa todas as imagens
@@ -92,7 +114,11 @@ const AIImageAnalysis = () => {
           }))
         });
       } else {
-        setError(result.error || 'Erro na análise das imagens.');
+        if (result.error && result.error.includes('sobrecarregado')) {
+          setError('⚠️ O modelo de IA está temporariamente sobrecarregado. Tente novamente em alguns minutos.');
+        } else {
+          setError(result.error || 'Erro na análise das imagens.');
+        }
       }
     } catch (err) {
       setError('Erro inesperado durante a análise.');
@@ -102,25 +128,105 @@ const AIImageAnalysis = () => {
     }
   };
 
+  const handleComparison = async () => {
+    if (databaseImages.length === 0 || webscrapingImages.length === 0) {
+      setError('Por favor, adicione pelo menos uma imagem em cada seção.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const prompt = customPrompt || `
+        Compare as imagens do banco de dados com as imagens de webscraping e forneça uma análise detalhada sobre:
+        
+        1. SIMILARIDADE VISUAL:
+        - Percentual de similaridade entre as propriedades
+        - Características arquitetônicas em comum
+        - Diferenças estruturais identificadas
+        
+        2. QUALIDADE DAS IMAGENS:
+        - Resolução e nitidez das imagens do banco vs webscraping
+        - Ângulos e perspectivas utilizadas
+        - Iluminação e condições de captura
+        
+        3. AUTENTICIDADE:
+        - Indicadores de que as imagens são da mesma propriedade
+        - Elementos únicos que confirmam ou negam a correspondência
+        - Possíveis sinais de edição ou manipulação
+        
+        4. AVALIAÇÃO DE VALOR:
+        - Consistência na apresentação da propriedade
+        - Impacto das diferenças no valor percebido
+        - Recomendações para verificação adicional
+        
+        5. CONCLUSÃO:
+        - Probabilidade de serem da mesma propriedade (0-100%)
+        - Nível de confiança na análise
+        - Próximos passos recomendados
+      `;
+
+      const result = await GeminiService.comparePropertyImages(
+        databaseImages,
+        webscrapingImages,
+        prompt
+      );
+
+      if (result.success) {
+        setComparisonResult({
+          analysis: result.comparison,
+          timestamp: result.timestamp,
+          databaseImageCount: result.property1ImageCount,
+          webscrapingImageCount: result.property2ImageCount
+        });
+      } else {
+        if (result.error && result.error.includes('sobrecarregado')) {
+          setError('⚠️ O modelo de IA está temporariamente sobrecarregado. Tente novamente em alguns minutos.');
+        } else {
+          setError(result.error || 'Erro na comparação das imagens.');
+        }
+      }
+    } catch (err) {
+      setError(`Erro inesperado: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Gera e baixa PDF
   const generatePDF = async () => {
-    if (!analysisResult) {
+    if (activeTab === 'analysis' && !analysisResult) {
       setError('Nenhuma análise disponível para gerar PDF.');
+      return;
+    }
+    
+    if (activeTab === 'comparison' && !comparisonResult) {
+      setError('Nenhuma comparação disponível para gerar PDF.');
       return;
     }
 
     try {
-      if (analysisType === 'comparison') {
-        await PDFGenerator.generateComparisonReport(analysisResult);
-      } else {
-        await PDFGenerator.generateAnalysisReport(analysisResult);
-      }
+      const pdfGenerator = new PDFGenerator();
       
-      const filename = `analise-imovel-${new Date().toISOString().split('T')[0]}.pdf`;
-      PDFGenerator.save(filename);
+      if (activeTab === 'analysis') {
+        await pdfGenerator.generateAnalysisReport({
+          propertyInfo,
+          analysis: analysisResult.analysis,
+          images,
+          timestamp: analysisResult.timestamp
+        });
+      } else {
+        await pdfGenerator.generateComparisonReport({
+          propertyInfo,
+          analysis: comparisonResult.analysis,
+          databaseImages,
+          webscrapingImages,
+          timestamp: comparisonResult.timestamp
+        });
+      }
     } catch (err) {
-      setError('Erro ao gerar PDF.');
-      console.error('Erro na geração do PDF:', err);
+      setError(`Erro ao gerar PDF: ${err.message}`);
     }
   };
 
@@ -288,24 +394,48 @@ const AIImageAnalysis = () => {
       <div style={styles.card}>
         <h1 style={styles.title}>Análise de Imóveis com IA</h1>
         
+        <div className="tab-navigation" style={{ display: 'flex', gap: '12px', marginBottom: '20px', justifyContent: 'center' }}>
+          <button 
+            style={{
+              ...styles.button,
+              ...(activeTab === 'analysis' ? styles.primaryButton : styles.secondaryButton),
+              padding: '8px 16px'
+            }}
+            onClick={() => setActiveTab('analysis')}
+          >
+            📊 Análise Simples
+          </button>
+          <button 
+            style={{
+              ...styles.button,
+              ...(activeTab === 'comparison' ? styles.primaryButton : styles.secondaryButton),
+              padding: '8px 16px'
+            }}
+            onClick={() => setActiveTab('comparison')}
+          >
+            🔍 Comparação de Imagens
+          </button>
+        </div>
+        
         {error && <div style={styles.error}>{error}</div>}
         
-        {/* Configuração do tipo de análise */}
-        <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>Tipo de Análise</h3>
-          <select
-            value={analysisType}
-            onChange={(e) => setAnalysisType(e.target.value)}
-            style={styles.select}
-          >
-            <option value="single">Análise de Imagem Única</option>
-            <option value="multiple">Análise de Múltiplas Imagens</option>
-            <option value="comparison">Comparação entre Imóveis</option>
-          </select>
-        </div>
+        {activeTab === 'analysis' && (
+          <>
+            {/* Configuração do tipo de análise */}
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>Tipo de Análise</h3>
+              <select
+                value={analysisType}
+                onChange={(e) => setAnalysisType(e.target.value)}
+                style={styles.select}
+              >
+                <option value="single">Análise de Imagem Única</option>
+                <option value="multiple">Análise de Múltiplas Imagens</option>
+              </select>
+            </div>
 
-        {/* Informações do imóvel */}
-        <div style={styles.section}>
+            {/* Informações do imóvel */}
+            <div style={styles.section}>
           <h3 style={styles.sectionTitle}>Informações do Imóvel (Opcional)</h3>
           <div style={styles.row}>
             <div style={styles.formGroup}>
@@ -387,8 +517,8 @@ const AIImageAnalysis = () => {
           </div>
         </div>
 
-        {/* Upload de imagens */}
-        <div style={styles.section}>
+            {/* Upload de imagens */}
+            <div style={styles.section}>
           <h3 style={styles.sectionTitle}>Imagens para Análise</h3>
           <div style={styles.formGroup}>
             <label style={styles.label}>Selecionar Imagens</label>
@@ -442,8 +572,8 @@ const AIImageAnalysis = () => {
           )}
         </div>
 
-        {/* Prompt personalizado */}
-        <div style={styles.section}>
+            {/* Prompt personalizado */}
+            <div style={styles.section}>
           <h3 style={styles.sectionTitle}>Prompt Personalizado (Opcional)</h3>
           <div style={styles.formGroup}>
             <label style={styles.label}>Instruções Específicas para a IA</label>
@@ -456,29 +586,173 @@ const AIImageAnalysis = () => {
           </div>
         </div>
 
-        {/* Botões de ação */}
-        <div style={styles.buttonGroup}>
-          <button
-            onClick={runAnalysis}
-            disabled={loading || images.length === 0}
-            style={{
-              ...styles.button,
-              ...styles.primaryButton,
-              opacity: loading || images.length === 0 ? 0.6 : 1
-            }}
-          >
-            {loading ? 'Analisando...' : 'Iniciar Análise'}
-          </button>
-          
-          {analysisResult && (
-            <button
-              onClick={generatePDF}
-              style={{ ...styles.button, ...styles.secondaryButton }}
-            >
-              Gerar PDF
-            </button>
-          )}
-        </div>
+            {/* Botões de ação */}
+            <div style={styles.buttonGroup}>
+              <button
+                onClick={runAnalysis}
+                disabled={loading || images.length === 0}
+                style={{
+                  ...styles.button,
+                  ...styles.primaryButton,
+                  opacity: loading || images.length === 0 ? 0.6 : 1
+                }}
+              >
+                {loading ? 'Analisando...' : 'Iniciar Análise'}
+              </button>
+              
+              {analysisResult && (
+                <button
+                  onClick={generatePDF}
+                  style={{ ...styles.button, ...styles.secondaryButton }}
+                >
+                  Gerar PDF
+                </button>
+              )}
+            </div>
+          </>
+        )}
+
+        {activeTab === 'comparison' && (
+          <>
+            {/* Seção de imagens do banco de dados */}
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>Imagens do Banco de Dados</h3>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Selecionar Imagens do Banco</label>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleDatabaseImageUpload}
+                  style={styles.fileInput}
+                />
+              </div>
+              
+              {databaseImages.length > 0 && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '14px', color: '#374151' }}>
+                      {databaseImages.length} imagem(ns) do banco
+                    </span>
+                    <button
+                      onClick={() => setDatabaseImages([])}
+                      style={{ ...styles.button, ...styles.dangerButton, padding: '6px 12px', fontSize: '12px' }}
+                    >
+                      Limpar
+                    </button>
+                  </div>
+                  
+                  <div style={styles.imageGrid}>
+                    {databaseImages.map((image, index) => (
+                      <div key={index} style={styles.imageItem}>
+                        <button
+                          onClick={() => removeDatabaseImage(index)}
+                          style={styles.removeButton}
+                        >
+                          ×
+                        </button>
+                        <div style={{ fontSize: '12px', color: '#6b7280', wordBreak: 'break-word' }}>
+                          {image.name}
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '4px' }}>
+                          {(image.size / 1024 / 1024).toFixed(2)} MB
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Seção de imagens de webscraping */}
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>Imagens de Webscraping</h3>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Selecionar Imagens de Webscraping</label>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleWebscrapingImageUpload}
+                  style={styles.fileInput}
+                />
+              </div>
+              
+              {webscrapingImages.length > 0 && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '14px', color: '#374151' }}>
+                      {webscrapingImages.length} imagem(ns) de webscraping
+                    </span>
+                    <button
+                      onClick={() => setWebscrapingImages([])}
+                      style={{ ...styles.button, ...styles.dangerButton, padding: '6px 12px', fontSize: '12px' }}
+                    >
+                      Limpar
+                    </button>
+                  </div>
+                  
+                  <div style={styles.imageGrid}>
+                    {webscrapingImages.map((image, index) => (
+                      <div key={index} style={styles.imageItem}>
+                        <button
+                          onClick={() => removeWebscrapingImage(index)}
+                          style={styles.removeButton}
+                        >
+                          ×
+                        </button>
+                        <div style={{ fontSize: '12px', color: '#6b7280', wordBreak: 'break-word' }}>
+                          {image.name}
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '4px' }}>
+                          {(image.size / 1024 / 1024).toFixed(2)} MB
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Prompt personalizado para comparação */}
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>Prompt Personalizado (Opcional)</h3>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Instruções Específicas para Comparação</label>
+                <textarea
+                  value={customPrompt}
+                  onChange={(e) => setCustomPrompt(e.target.value)}
+                  style={styles.textarea}
+                  placeholder="Digite instruções específicas para a comparação. Deixe em branco para usar o prompt padrão otimizado para comparação de imóveis."
+                />
+              </div>
+            </div>
+
+            {/* Botões de ação para comparação */}
+            <div style={styles.buttonGroup}>
+              <button
+                onClick={handleComparison}
+                disabled={loading || databaseImages.length === 0 || webscrapingImages.length === 0}
+                style={{
+                  ...styles.button,
+                  ...styles.primaryButton,
+                  opacity: loading || databaseImages.length === 0 || webscrapingImages.length === 0 ? 0.6 : 1
+                }}
+              >
+                {loading ? 'Comparando...' : 'Iniciar Comparação'}
+              </button>
+              
+              {comparisonResult && (
+                <button
+                  onClick={generatePDF}
+                  style={{ ...styles.button, ...styles.secondaryButton }}
+                >
+                  Gerar PDF
+                </button>
+              )}
+            </div>
+          </>
+        )}
 
         {/* Loading */}
         {loading && (
@@ -489,7 +763,7 @@ const AIImageAnalysis = () => {
         )}
 
         {/* Resultado da análise */}
-        {analysisResult && (
+        {analysisResult && activeTab === 'analysis' && (
           <div style={styles.resultCard}>
             <h3 style={styles.sectionTitle}>Resultado da Análise</h3>
             <div style={styles.resultText}>
@@ -498,6 +772,22 @@ const AIImageAnalysis = () => {
             
             <div style={{ marginTop: '16px', fontSize: '12px', color: '#6b7280' }}>
               Análise realizada em: {new Date(analysisResult.timestamp).toLocaleString('pt-BR')}
+            </div>
+          </div>
+        )}
+
+        {/* Resultado da comparação */}
+        {comparisonResult && activeTab === 'comparison' && (
+          <div style={styles.resultCard}>
+            <h3 style={styles.sectionTitle}>Resultado da Comparação</h3>
+            <div style={styles.resultText}>
+              {comparisonResult.analysis}
+            </div>
+            
+            <div style={{ marginTop: '16px', fontSize: '12px', color: '#6b7280' }}>
+              <div>Comparação realizada em: {new Date(comparisonResult.timestamp).toLocaleString('pt-BR')}</div>
+              <div>Imagens do banco: {comparisonResult.databaseImageCount}</div>
+              <div>Imagens de webscraping: {comparisonResult.webscrapingImageCount}</div>
             </div>
           </div>
         )}

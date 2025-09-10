@@ -230,37 +230,46 @@ class PDFGenerator {
     
     // Cabeçalho
     this.addHeader(
-      'RELATÓRIO COMPARATIVO DE IMÓVEIS',
-      'Análise Comparativa com IA'
+      'RELATÓRIO DE COMPARAÇÃO DE IMAGENS',
+      'Banco de Dados vs Webscraping'
     );
     
-    // Informações dos imóveis
-    if (comparisonData.property1Info) {
-      this.addSection('PRIMEIRO IMÓVEL', '');
-      this.addPropertyInfo(comparisonData.property1Info);
+    // Informações da propriedade
+    if (comparisonData.propertyInfo) {
+      this.addPropertyInfo(comparisonData.propertyInfo);
     }
     
-    if (comparisonData.property2Info) {
-      this.addSection('SEGUNDO IMÓVEL', '');
-      this.addPropertyInfo(comparisonData.property2Info);
-    }
+    // Resumo da comparação
+    const databaseCount = comparisonData.databaseImages ? comparisonData.databaseImages.length : 0;
+    const webscrapingCount = comparisonData.webscrapingImages ? comparisonData.webscrapingImages.length : 0;
+    
+    this.addSection('RESUMO DA COMPARAÇÃO', 
+      `Imagens do Banco de Dados: ${databaseCount}\n` +
+      `Imagens de Webscraping: ${webscrapingCount}\n` +
+      `Total de imagens analisadas: ${databaseCount + webscrapingCount}`
+    );
     
     // Análise comparativa
-    if (comparisonData.comparison) {
-      this.addAIAnalysis(comparisonData.comparison);
+    if (comparisonData.analysis) {
+      this.addSection('ANÁLISE COMPARATIVA DETALHADA', comparisonData.analysis);
     }
     
     // Informações técnicas
     if (comparisonData.timestamp) {
       this.addSection('INFORMAÇÕES TÉCNICAS', 
         `Comparação realizada em: ${new Date(comparisonData.timestamp).toLocaleString('pt-BR')}\n` +
-        `Modelo de IA utilizado: Google Gemini 1.5 Flash\n` +
+        `Modelo de IA utilizado: Google Gemini Pro Vision\n` +
+        `Tipo de análise: Comparação de autenticidade de propriedades\n` +
         `Versão do sistema: 1.0.0`
       );
     }
     
     // Rodapé
     this.addFooter();
+    
+    // Salvar automaticamente
+    const fileName = `comparacao_imagens_${new Date().toISOString().split('T')[0]}.pdf`;
+    this.save(fileName);
     
     return this.doc;
   }
@@ -287,6 +296,8 @@ class PDFGenerator {
     }
     return null;
   }
+
+
 }
 
 export default new PDFGenerator();

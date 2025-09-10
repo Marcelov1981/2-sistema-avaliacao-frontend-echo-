@@ -11,6 +11,7 @@ import NovoLaudo from './components/NovoLaudo';
 import NovaAvaliacao from './components/NovaAvaliacao';
 import PropertyAnalysisSystem from './components/PropertyAnalysisSystem';
 import AIImageAnalysis from './components/AIImageAnalysis';
+
 import { appStyles, getSidebarStyles, otherStyles } from './styles/appStyles';
 
 const SaaSApp = () => {
@@ -122,7 +123,8 @@ const SaaSApp = () => {
     { id: 'orcamento', label: 'Orçamento', icon: 'calculator' },
     { id: 'avaliacao', label: 'Avaliação', icon: 'star' },
     { id: 'laudo', label: 'Laudo', icon: 'file' },
-    { id: 'analise-imagens', label: 'Análise de Imagens', icon: 'image' }
+    { id: 'analise-imagens', label: 'Análise de Imagens', icon: 'image' },
+
   ];
 
   // Componente de Login
@@ -650,7 +652,7 @@ const SaaSApp = () => {
        />
        
        <NovoLaudo
-         isOpen={showNovoLaudo}
+          isOpen={showNovoLaudo}
          onClose={() => setShowNovoLaudo(false)}
          onLaudoCreated={() => {
            // Callback para atualizar lista de laudos se necessário

@@ -29,7 +29,7 @@ class GeminiService {
   }
 
   // Analisa uma única imagem
-  async analyzeImage(imageFile, prompt = '') {
+  async analyzeImage(imageFile, prompt = '', retries = 3) {
     try {
       const imagePart = await this.fileToGenerativePart(imageFile);
       
@@ -83,6 +83,22 @@ class GeminiService {
       };
     } catch (error) {
       console.error('Erro na análise da imagem:', error);
+      
+      // Se for erro 503 (modelo sobrecarregado) e ainda temos tentativas
+      if (error.message.includes('503') || error.message.includes('overloaded')) {
+        if (retries > 0) {
+          console.log(`Modelo sobrecarregado. Tentando novamente em 2 segundos... (${retries} tentativas restantes)`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          return this.analyzeImage(imageFile, prompt, retries - 1);
+        } else {
+          return {
+            success: false,
+            error: 'O modelo Gemini está temporariamente sobrecarregado. Tente novamente em alguns minutos.',
+            timestamp: new Date().toISOString()
+          };
+        }
+      }
+      
       return {
         success: false,
         error: error.message,
@@ -92,7 +108,7 @@ class GeminiService {
   }
 
   // Analisa múltiplas imagens
-  async analyzeMultipleImages(imageFiles, prompt = '') {
+  async analyzeMultipleImages(imageFiles, prompt = '', retries = 3) {
     try {
       const imageParts = await Promise.all(
         imageFiles.map(file => this.fileToGenerativePart(file))
@@ -146,6 +162,22 @@ class GeminiService {
       };
     } catch (error) {
       console.error('Erro na análise das imagens:', error);
+      
+      // Se for erro 503 (modelo sobrecarregado) e ainda temos tentativas
+      if (error.message.includes('503') || error.message.includes('overloaded')) {
+        if (retries > 0) {
+          console.log(`Modelo sobrecarregado. Tentando novamente em 2 segundos... (${retries} tentativas restantes)`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          return this.analyzeMultipleImages(imageFiles, prompt, retries - 1);
+        } else {
+          return {
+            success: false,
+            error: 'O modelo Gemini está temporariamente sobrecarregado. Tente novamente em alguns minutos.',
+            timestamp: new Date().toISOString()
+          };
+        }
+      }
+      
       return {
         success: false,
         error: error.message,
@@ -155,7 +187,7 @@ class GeminiService {
   }
 
   // Gera análise comparativa entre dois conjuntos de imagens
-  async comparePropertyImages(images1, images2, prompt = '') {
+  async comparePropertyImages(images1, images2, prompt = '', retries = 3) {
     try {
       const imageParts1 = await Promise.all(
         images1.map(file => this.fileToGenerativePart(file))
@@ -222,6 +254,22 @@ class GeminiService {
       };
     } catch (error) {
       console.error('Erro na comparação das imagens:', error);
+      
+      // Se for erro 503 (modelo sobrecarregado) e ainda temos tentativas
+      if (error.message.includes('503') || error.message.includes('overloaded')) {
+        if (retries > 0) {
+          console.log(`Modelo sobrecarregado. Tentando novamente em 2 segundos... (${retries} tentativas restantes)`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          return this.comparePropertyImages(images1, images2, prompt, retries - 1);
+        } else {
+          return {
+            success: false,
+            error: 'O modelo Gemini está temporariamente sobrecarregado. Tente novamente em alguns minutos.',
+            timestamp: new Date().toISOString()
+          };
+        }
+      }
+      
       return {
         success: false,
         error: error.message,
