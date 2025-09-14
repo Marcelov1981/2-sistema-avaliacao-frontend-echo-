@@ -7,7 +7,7 @@ const NovoCliente = ({ isOpen, onClose, onClienteCreated }) => {
     nome: '',
     email: '',
     telefone: '',
-    cpf_cnpj: '',
+    documento: '',
     tipo_pessoa: 'fisica', // fisica ou juridica
     endereco: '',
     cidade: '',
@@ -15,7 +15,8 @@ const NovoCliente = ({ isOpen, onClose, onClienteCreated }) => {
     cep: '',
     registroProfissional: '',
     tipoRegistro: '',
-    observacoes: ''
+    observacoes: '',
+    status: 'ativo'
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -44,7 +45,7 @@ const NovoCliente = ({ isOpen, onClose, onClienteCreated }) => {
         nome: '',
         email: '',
         telefone: '',
-        cpf_cnpj: '',
+        documento: '',
         tipo_pessoa: 'fisica',
         endereco: '',
         cidade: '',
@@ -52,7 +53,8 @@ const NovoCliente = ({ isOpen, onClose, onClienteCreated }) => {
         cep: '',
         registroProfissional: '',
         tipoRegistro: '',
-        observacoes: ''
+        observacoes: '',
+        status: 'ativo'
       });
       
       // Callback para atualizar lista
@@ -220,8 +222,8 @@ const NovoCliente = ({ isOpen, onClose, onClienteCreated }) => {
           </label>
           <input
             type="text"
-            name="cpf_cnpj"
-            value={formData.cpf_cnpj}
+            name="documento"
+            value={formData.documento}
             onChange={handleInputChange}
             style={styles.input}
             required
