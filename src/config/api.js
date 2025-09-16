@@ -1,24 +1,24 @@
 // Configurações da API
 
-// Configuração base da API
-const API_BASE_URL = 'http://localhost:3001/api/v1';
+// Configuração base da API usando variáveis de ambiente
+const API_BASE_URL_DEV = 'http://localhost:3001/api/v1';
+const API_BASE_URL_PROD = import.meta.env.VITE_API_BASE_URL || 'https://your-backend-url.com/api/v1';
 
 // Configuração para desenvolvimento
 const DEV_CONFIG = {
-  // URLs de desenvolvimento podem ser diferentes
-  baseURL: API_BASE_URL,
+  baseURL: API_BASE_URL_DEV,
   timeout: 30000,
 };
 
 // Configuração para produção
 const PROD_CONFIG = {
-  // URLs de produção
-  baseURL: API_BASE_URL,
+  baseURL: API_BASE_URL_PROD,
   timeout: 30000,
 };
 
 // Selecionar configuração baseada no ambiente
 const config = import.meta.env.MODE === 'production' ? PROD_CONFIG : DEV_CONFIG;
+const API_BASE_URL = config.baseURL;
 
 export const API_BASE_URL_EXPORT = config.baseURL;
 
