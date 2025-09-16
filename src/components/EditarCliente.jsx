@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from './Modal';
+import CepService from '../utils/CepService';
+import { API_ENDPOINTS, getAuthHeaders } from '../config/api';
+import authService from '../services/authService';
 
 const EditarCliente = ({ isOpen, onClose, onSuccess, cliente }) => {
   const [formData, setFormData] = useState({
@@ -20,6 +23,7 @@ const EditarCliente = ({ isOpen, onClose, onSuccess, cliente }) => {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [cepLoading, setCepLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen && cliente) {
@@ -42,10 +46,50 @@ const EditarCliente = ({ isOpen, onClose, onSuccess, cliente }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Formatar CEP automaticamente
+    if (name === 'cep') {
+      const cepFormatado = CepService.formatarCep(value);
+      setFormData(prev => ({
+        ...prev,
+        [name]: cepFormatado
+      }));
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+  
+  const buscarEnderecoPorCep = async () => {
+    if (!formData.cep || !CepService.validarCep(formData.cep)) {
+      alert('Por favor, digite um CEP válido');
+      return;
+    }
+    
+    setCepLoading(true);
+    
+    try {
+      const resultado = await CepService.buscarEnderecoPorCep(formData.cep);
+      
+      if (resultado.success) {
+        setFormData(prev => ({
+          ...prev,
+          endereco: resultado.data.endereco,
+          cidade: resultado.data.cidade,
+          estado: resultado.data.estado
+        }));
+        alert('Endereço encontrado e preenchido automaticamente!');
+      } else {
+        alert(`Erro ao buscar CEP: ${resultado.error}`);
+      }
+    } catch {
+      alert('Erro ao buscar endereço. Tente novamente.');
+    } finally {
+      setCepLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -54,9 +98,18 @@ const EditarCliente = ({ isOpen, onClose, onSuccess, cliente }) => {
     setError('');
 
     try {
+      // Verificar se está autenticado
+      if (!authService.isAuthenticated()) {
+        setError('Usuário não autenticado');
+        return;
+      }
+
       const response = await axios.put(
-        `https://geomind-service-production.up.railway.app/api/v1/clientes/${cliente.id}`,
-        formData
+        `${API_ENDPOINTS.clientes.base}/${cliente.id}`,
+        formData,
+        {
+          headers: getAuthHeaders()
+        }
       );
       
       if (onSuccess) {
@@ -65,7 +118,11 @@ const EditarCliente = ({ isOpen, onClose, onSuccess, cliente }) => {
       
       onClose();
     } catch (err) {
-      setError('Erro ao atualizar cliente. Tente novamente.');
+      if (err.response?.status === 401) {
+        setError('Sessão expirada. Faça login novamente.');
+      } else {
+        setError('Erro ao atualizar cliente. Tente novamente.');
+      }
       console.error('Erro ao atualizar cliente:', err);
     } finally {
       setLoading(false);
@@ -273,16 +330,35 @@ const EditarCliente = ({ isOpen, onClose, onSuccess, cliente }) => {
           </div>
           <div style={styles.formGroup}>
             <label style={styles.label}>CEP *</label>
-            <input
-              type="text"
-              name="cep"
-              value={formData.cep}
-              onChange={handleInputChange}
-              style={styles.input}
-              required
-              onFocus={(e) => e.target.style.borderColor = '#10b981'}
-              onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-            />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="text"
+                name="cep"
+                value={formData.cep}
+                onChange={handleInputChange}
+                style={{ ...styles.input, flex: 1 }}
+                required
+                placeholder="00000-000"
+                maxLength="9"
+                onFocus={(e) => e.target.style.borderColor = '#10b981'}
+                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+              />
+              <button
+                type="button"
+                onClick={buscarEnderecoPorCep}
+                disabled={cepLoading || !formData.cep || !CepService.validarCep(formData.cep)}
+                style={{
+                  ...styles.button,
+                  backgroundColor: cepLoading ? '#9ca3af' : '#10b981',
+                  cursor: cepLoading ? 'not-allowed' : 'pointer',
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  minWidth: '80px'
+                }}
+              >
+                {cepLoading ? 'Buscando...' : 'Buscar'}
+              </button>
+            </div>
           </div>
         </div>
 

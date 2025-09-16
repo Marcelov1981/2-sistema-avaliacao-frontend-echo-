@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { API_ENDPOINTS, getAuthHeaders } from '../config/api';
+import authService from '../services/authService';
 
 function Orcamentos() {
   const [orcamentosList, setOrcamentosList] = useState([]);
@@ -11,12 +13,32 @@ function Orcamentos() {
       try {
         setLoading(true);
         setError(null);
-        const response = await axios.get("https://geomind-service-production.up.railway.app/api/v1/orcamentos");
+        
+        // Verificar se está autenticado
+        if (!authService.isAuthenticated()) {
+          setError("Usuário não autenticado");
+          return;
+        }
+        
+        const response = await axios.get(API_ENDPOINTS.orcamentos.base, {
+          headers: getAuthHeaders()
+        });
+        
         console.log("Dados recebidos:", response.data); // Debug
-        setOrcamentosList(response.data);
+        
+        // Verificar se a resposta tem o formato esperado
+        if (response.data.success) {
+          setOrcamentosList(response.data.data || []);
+        } else {
+          setOrcamentosList(response.data || []);
+        }
       } catch (error) {
         console.error("Erro ao buscar orçamentos:", error);
-        setError("Erro ao carregar orçamentos. Tente novamente mais tarde.");
+        if (error.response?.status === 401) {
+          setError("Sessão expirada. Faça login novamente.");
+        } else {
+          setError("Erro ao carregar orçamentos. Tente novamente mais tarde.");
+        }
       } finally {
         setLoading(false);
       }

@@ -1,15 +1,54 @@
 // Utilitários para gerenciamento de logomarca nos relatórios
+import { API_BASE_URL } from '../config/api';
 
 /**
- * Obtém as configurações da logomarca do localStorage
- * @returns {Object} Configurações da logo
+ * Obtém as configurações da logomarca do backend ou localStorage
+ * @returns {Promise<Object>} Configurações da logo
  */
-export const getLogoConfig = () => {
+export const getLogoConfig = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (token) {
+      const response = await fetch(`${API_BASE_URL}/api/v1/configuracoes/logo`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          return data.data;
+        }
+      }
+    }
+  } catch {
+     console.log('Carregando configurações do localStorage');
+   }
+  
+  // Fallback para localStorage
   return {
     logoUrl: localStorage.getItem('logoUrl') || '',
     logoSize: parseInt(localStorage.getItem('logoSize')) || 100,
     logoPosition: localStorage.getItem('logoPosition') || 'top-right',
-    logoOpacity: parseInt(localStorage.getItem('logoOpacity')) || 100
+    logoOpacity: parseInt(localStorage.getItem('logoOpacity')) || 100,
+    showInPages: localStorage.getItem('showInPages') !== 'false',
+    showInReports: localStorage.getItem('showInReports') !== 'false'
+  };
+};
+
+/**
+ * Obtém as configurações da logomarca do localStorage (síncrono)
+ * @returns {Object} Configurações da logo
+ */
+export const getLogoConfigSync = () => {
+  return {
+    logoUrl: localStorage.getItem('logoUrl') || '',
+    logoSize: parseInt(localStorage.getItem('logoSize')) || 100,
+    logoPosition: localStorage.getItem('logoPosition') || 'top-right',
+    logoOpacity: parseInt(localStorage.getItem('logoOpacity')) || 100,
+    showInPages: localStorage.getItem('showInPages') !== 'false',
+    showInReports: localStorage.getItem('showInReports') !== 'false'
   };
 };
 
@@ -19,9 +58,15 @@ export const getLogoConfig = () => {
  * @param {number} pageWidth - Largura da página
  * @param {number} pageHeight - Altura da página
  * @param {number} margin - Margem da página
+ * @param {boolean} isReport - Se é um relatório (para verificar showInReports)
  */
-export const addLogoToPDF = async (doc, pageWidth, pageHeight, margin = 20) => {
-  const logoConfig = getLogoConfig();
+export const addLogoToPDF = async (doc, pageWidth, pageHeight, margin = 20, isReport = true) => {
+  const logoConfig = await getLogoConfig();
+  
+  // Verificar se deve mostrar logo em relatórios
+  if (isReport && !logoConfig.showInReports) {
+    return; // Logo desabilitada para relatórios
+  }
   
   if (!logoConfig.logoUrl) {
     return; // Não há logo configurada
@@ -134,7 +179,7 @@ const calculateLogoPosition = (position, pageWidth, pageHeight, logoWidth, logoH
  * @returns {JSX.Element|null} Elemento da logo ou null
  */
 export const renderLogoForPreview = (containerClass = '') => {
-  const logoConfig = getLogoConfig();
+  const logoConfig = getLogoConfigSync();
   
   if (!logoConfig.logoUrl) {
     return null;
@@ -222,8 +267,17 @@ const getPositionStylesForReact = (position) => {
  * @returns {boolean} True se há logo configurada
  */
 export const hasLogo = () => {
-  const logoUrl = localStorage.getItem('logoUrl');
-  return logoUrl && logoUrl.trim() !== '';
+  const logoConfig = getLogoConfigSync();
+  return !!logoConfig.logoUrl;
+};
+
+/**
+ * Verifica se há uma logo configurada (versão assíncrona)
+ * @returns {Promise<boolean>} True se há logo
+ */
+export const hasLogoAsync = async () => {
+  const logoConfig = await getLogoConfig();
+  return !!logoConfig.logoUrl;
 };
 
 /**

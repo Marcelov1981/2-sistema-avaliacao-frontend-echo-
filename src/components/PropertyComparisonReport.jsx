@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Progress, Alert, Statistic, Tag, Divider, Typography, Button, Space } from 'antd';
 import { TrophyOutlined, WarningOutlined, CheckCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import SafariCompatibility from '../utils/SafariCompatibility.js';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -282,15 +283,10 @@ const PropertyComparisonReport = ({ comparisonData, onExport }) => {
     if (onExport) {
       onExport(exportData);
     } else {
-      // Download como JSON
+      // Download como JSON com compatibilidade para Safari
       const dataStr = JSON.stringify(exportData, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `relatorio-avaliacao-${reportData?.propertyId || 'property'}.json`;
-      link.click();
-      URL.revokeObjectURL(url);
+      const filename = `relatorio-avaliacao-${reportData?.propertyId || 'property'}.json`;
+      SafariCompatibility.downloadFile(dataStr, filename, 'application/json');
     }
   };
 

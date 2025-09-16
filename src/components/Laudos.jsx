@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { API_ENDPOINTS } from '../config/api';
 
 function Laudos() {
   const [laudosList, setLaudosList] = useState([]);
@@ -11,7 +12,7 @@ function Laudos() {
       try {
         setLoading(true);
         setError(null);
-        const response = await axios.get("https://geomind-service-production.up.railway.app/api/v1/laudos");
+        const response = await axios.get(API_ENDPOINTS.laudos.base);
         console.log("Dados de laudos recebidos:", response.data); // Debug
         setLaudosList(response.data);
       } catch (error) {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from './Modal';
+import { API_ENDPOINTS } from '../config/api';
 
 const NovaAvaliacao = ({ isOpen, onClose, onAvaliacaoCreated }) => {
   const [formData, setFormData] = useState({
@@ -42,7 +43,7 @@ const NovaAvaliacao = ({ isOpen, onClose, onAvaliacaoCreated }) => {
   const fetchOrcamentos = async () => {
     setLoadingOrcamentos(true);
     try {
-      const response = await axios.get('https://geomind-service-production.up.railway.app/api/v1/orcamentos');
+      const response = await axios.get(API_ENDPOINTS.orcamentos.base);
       setOrcamentos(response.data || []);
     } catch (error) {
       console.error('Erro ao carregar orçamentos:', error);
@@ -67,7 +68,7 @@ const NovaAvaliacao = ({ isOpen, onClose, onAvaliacaoCreated }) => {
 
     try {
       const response = await axios.post(
-        'https://geomind-service-production.up.railway.app/api/v1/avaliacoes',
+        API_ENDPOINTS.avaliacoes.base,
         {
           ...formData,
           valorAvaliado: parseFloat(formData.valorAvaliado) || 0

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { API_ENDPOINTS, getAuthHeaders } from '../config/api';
+import authService from '../services/authService';
 import EditarCliente from './EditarCliente';
 
 function Clientes() {
@@ -14,11 +16,32 @@ function Clientes() {
       try {
         setLoading(true);
         setError(null);
-        const response = await axios.get("https://geomind-service-production.up.railway.app/api/v1/clientes");
-        setClientesList(response.data);
+        
+        // Verificar se está autenticado
+        if (!authService.isAuthenticated()) {
+          setError("Usuário não autenticado");
+          return;
+        }
+        
+        const response = await axios.get(API_ENDPOINTS.clientes.base, {
+          headers: getAuthHeaders()
+        });
+        
+        console.log("Dados recebidos:", response.data); // Debug
+        
+        // Verificar se a resposta tem o formato esperado
+        if (response.data.success) {
+          setClientesList(response.data.data || []);
+        } else {
+          setClientesList(response.data || []);
+        }
       } catch (error) {
         console.error("Erro ao buscar clientes:", error);
-        setError("Erro ao carregar clientes. Tente novamente mais tarde.");
+        if (error.response?.status === 401) {
+          setError("Sessão expirada. Faça login novamente.");
+        } else {
+          setError("Erro ao carregar clientes. Tente novamente mais tarde.");
+        }
       } finally {
         setLoading(false);
       }

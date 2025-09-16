@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { API_ENDPOINTS, getAuthHeaders } from '../config/api';
+import authService from '../services/authService';
 import EditarProjeto from './EditarProjeto';
 
 function Projetos() {
@@ -15,20 +17,44 @@ function Projetos() {
       setLoading(true);
       setError(null);
       
+      // Verificar se está autenticado
+      if (!authService.isAuthenticated()) {
+        setError("Usuário não autenticado");
+        return;
+      }
+      
       // Buscar projetos e clientes em paralelo
       const [projetosResponse, clientesResponse] = await Promise.all([
-        axios.get("https://geomind-service-production.up.railway.app/api/v1/realstate"),
-        axios.get("https://geomind-service-production.up.railway.app/api/v1/clientes")
+        axios.get(API_ENDPOINTS.projetos.base, {
+          headers: getAuthHeaders()
+        }),
+        axios.get(API_ENDPOINTS.clientes.base, {
+          headers: getAuthHeaders()
+        })
       ]);
       
       console.log("Dados de projetos recebidos:", projetosResponse.data);
       console.log("Dados de clientes recebidos:", clientesResponse.data);
       
-      setProjetosList(projetosResponse.data);
-      setClientesList(clientesResponse.data);
+      // Verificar se a resposta tem o formato esperado
+      if (projetosResponse.data.success) {
+        setProjetosList(projetosResponse.data.data || []);
+      } else {
+        setProjetosList(projetosResponse.data || []);
+      }
+      
+      if (clientesResponse.data.success) {
+        setClientesList(clientesResponse.data.data || []);
+      } else {
+        setClientesList(clientesResponse.data || []);
+      }
     } catch (error) {
       console.error("Erro ao buscar dados:", error);
-      setError("Erro ao carregar dados. Tente novamente mais tarde.");
+      if (error.response?.status === 401) {
+        setError("Sessão expirada. Faça login novamente.");
+      } else {
+        setError("Erro ao carregar dados. Tente novamente mais tarde.");
+      }
     } finally {
       setLoading(false);
     }

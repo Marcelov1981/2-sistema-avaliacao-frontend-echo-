@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Form, Input, Button, Typography, List, Modal, message, Space, Tag, Popconfirm } from 'antd';
 import { CreditCardOutlined, PlusOutlined, EditOutlined, DeleteOutlined, LockOutlined } from '@ant-design/icons';
+import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 
 const { Title, Text } = Typography;
 
@@ -15,66 +17,92 @@ const GerenciamentoCartoes = ({ onCardSaved, onCardDeleted }) => {
     carregarCartoes();
   }, []);
 
-  const carregarCartoes = () => {
-    const cartoesStorage = localStorage.getItem('cartoes');
-    if (cartoesStorage) {
-      setCartoes(JSON.parse(cartoesStorage));
+  const carregarCartoes = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      const response = await axios.get(`${API_BASE_URL}/api/v1/cartoes`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.data && response.data.success) {
+        setCartoes(response.data.cartoes || []);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar cartões:', error);
+      // Fallback para localStorage em caso de erro
+      const cartoesStorage = localStorage.getItem('cartoes');
+      if (cartoesStorage) {
+        setCartoes(JSON.parse(cartoesStorage));
+      }
     }
   };
 
-  const salvarCartoes = (novosCartoes) => {
-    localStorage.setItem('cartoes', JSON.stringify(novosCartoes));
-    setCartoes(novosCartoes);
-  };
+
 
   const handleSaveCard = async (values) => {
     setLoading(true);
     try {
-      // Simular processamento
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const token = localStorage.getItem('token');
+      if (!token) {
+        message.error('Usuário não autenticado.');
+        return;
+      }
       
-      const novoCartao = {
-        id: editingCard ? editingCard.id : 'card_' + Date.now(),
-        numero: values.numero,
+      const dadosCartao = {
+        numero: values.numero.replace(/\s/g, ''),
         nome: values.nome,
         validade: values.validade,
         cvv: values.cvv,
-        // Mascarar número do cartão para exibição
-        numeroMascarado: '**** **** **** ' + values.numero.slice(-4),
-        bandeira: detectarBandeira(values.numero),
-        principal: cartoes.length === 0 || values.principal,
-        dataCadastro: editingCard ? editingCard.dataCadastro : new Date().toISOString(),
-        dataAtualizacao: new Date().toISOString()
+        principal: cartoes.length === 0 || values.principal
       };
       
-      let novosCartoes;
+      let response;
       if (editingCard) {
-        novosCartoes = cartoes.map(cartao => 
-          cartao.id === editingCard.id ? novoCartao : cartao
-        );
-        message.success('Cartão atualizado com sucesso!');
+        response = await axios.put(`${API_BASE_URL}/api/v1/cartoes/${editingCard.id}`, dadosCartao, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
       } else {
-        // Se for o primeiro cartão ou marcado como principal, desmarcar outros
-        if (novoCartao.principal) {
-          novosCartoes = cartoes.map(cartao => ({ ...cartao, principal: false }));
-          novosCartoes.push(novoCartao);
-        } else {
-          novosCartoes = [...cartoes, novoCartao];
+        response = await axios.post(`${API_BASE_URL}/api/v1/cartoes`, dadosCartao, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      }
+      
+      if (response.data && response.data.success) {
+        const novoCartao = response.data.cartao;
+        
+        // Recarregar cartões do backend
+        await carregarCartoes();
+        
+        message.success(editingCard ? 'Cartão atualizado com sucesso!' : 'Cartão cadastrado com sucesso!');
+        
+        if (onCardSaved) {
+          onCardSaved(novoCartao);
         }
-        message.success('Cartão cadastrado com sucesso!');
+        
+        setModalVisible(false);
+        setEditingCard(null);
+        form.resetFields();
+      } else {
+        message.error(response.data?.message || 'Erro ao salvar cartão.');
       }
-      
-      salvarCartoes(novosCartoes);
-      
-      if (onCardSaved) {
-        onCardSaved(novoCartao);
+    } catch (error) {
+      if (error.response?.status === 400) {
+        message.error(error.response.data?.message || 'Dados do cartão inválidos.');
+      } else if (error.response?.status === 401) {
+        message.error('Sessão expirada. Faça login novamente.');
+      } else {
+        message.error('Erro ao salvar cartão. Tente novamente.');
       }
-      
-      setModalVisible(false);
-      setEditingCard(null);
-      form.resetFields();
-    } catch {
-      message.error('Erro ao salvar cartão. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -82,25 +110,36 @@ const GerenciamentoCartoes = ({ onCardSaved, onCardDeleted }) => {
 
   const handleDeleteCard = async (cartaoId) => {
     try {
-      const novosCartoes = cartoes.filter(cartao => cartao.id !== cartaoId);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        message.error('Usuário não autenticado.');
+        return;
+      }
       
-      // Se o cartão deletado era o principal e há outros cartões, tornar o primeiro como principal
-      if (novosCartoes.length > 0) {
-        const cartaoDeletado = cartoes.find(c => c.id === cartaoId);
-        if (cartaoDeletado && cartaoDeletado.principal) {
-          novosCartoes[0].principal = true;
+      const response = await axios.delete(`${API_BASE_URL}/api/v1/cartoes/${cartaoId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
+      });
+      
+      if (response.data && response.data.success) {
+        // Recarregar cartões do backend
+        await carregarCartoes();
+        
+        if (onCardDeleted) {
+          onCardDeleted(cartaoId);
+        }
+        
+        message.success('Cartão removido com sucesso!');
+      } else {
+        message.error(response.data?.message || 'Erro ao remover cartão.');
       }
-      
-      salvarCartoes(novosCartoes);
-      
-      if (onCardDeleted) {
-        onCardDeleted(cartaoId);
+    } catch (error) {
+      if (error.response?.status === 401) {
+        message.error('Sessão expirada. Faça login novamente.');
+      } else {
+        message.error('Erro ao remover cartão.');
       }
-      
-      message.success('Cartão removido com sucesso!');
-    } catch {
-      message.error('Erro ao remover cartão.');
     }
   };
 
@@ -116,16 +155,7 @@ const GerenciamentoCartoes = ({ onCardSaved, onCardDeleted }) => {
     setModalVisible(true);
   };
 
-  const detectarBandeira = (numero) => {
-    const numeroLimpo = numero.replace(/\s/g, '');
-    
-    if (numeroLimpo.startsWith('4')) return 'Visa';
-    if (numeroLimpo.startsWith('5') || numeroLimpo.startsWith('2')) return 'Mastercard';
-    if (numeroLimpo.startsWith('3')) return 'American Express';
-    if (numeroLimpo.startsWith('6')) return 'Discover';
-    
-    return 'Desconhecida';
-  };
+
 
   const formatarNumeroCartao = (value) => {
     const numeroLimpo = value.replace(/\s/g, '');

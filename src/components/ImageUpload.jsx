@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Upload, X, Eye, Download } from 'lucide-react';
+import SafariCompatibility from '../utils/SafariCompatibility.js';
 
 const ImageUpload = ({ 
   images = [], 
@@ -48,7 +49,7 @@ const ImageUpload = ({
       const newImages = validFiles.map(file => ({
         id: Date.now() + Math.random(),
         file,
-        url: URL.createObjectURL(file),
+        url: SafariCompatibility.createObjectURL(file),
         name: file.name,
         size: file.size
       }));

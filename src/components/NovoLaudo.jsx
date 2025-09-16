@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from './Modal';
+import { useProject } from '../hooks/useProject';
+import { API_ENDPOINTS } from '../config/api';
 
 const NovoLaudo = ({ isOpen, onClose, onLaudoCreated }) => {
+  const { projectData, updateProjectData } = useProject();
+  
   const [formData, setFormData] = useState({
     avaliacaoId: '',
     numeroLaudo: '',
@@ -49,14 +53,22 @@ const NovoLaudo = ({ isOpen, onClose, onLaudoCreated }) => {
   useEffect(() => {
     if (isOpen) {
       fetchAvaliacoes();
+      
+      // Preencher avaliação se existe no contexto
+      if (projectData.orcamento) {
+        setFormData(prev => ({
+          ...prev,
+          avaliacaoId: projectData.orcamento.id || ''
+        }));
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, projectData.orcamento]);
 
   const fetchAvaliacoes = async () => {
     console.log('Iniciando carregamento de avaliações...');
     setLoadingAvaliacoes(true);
     try {
-      const response = await axios.get('https://geomind-service-production.up.railway.app/api/v1/avaliacoes');
+      const response = await axios.get(API_ENDPOINTS.avaliacoes.base);
       console.log('Resposta da API:', response.data);
       setAvaliacoes(response.data || []);
       console.log('Avaliações carregadas:', response.data?.length || 0);
@@ -117,7 +129,7 @@ const NovoLaudo = ({ isOpen, onClose, onLaudoCreated }) => {
 
     try {
       const response = await axios.post(
-        'https://geomind-service-production.up.railway.app/api/v1/laudos',
+        API_ENDPOINTS.laudos.base,
         {
           ...formData,
           valorFinal: parseFloat(formData.valorFinal) || 0
@@ -125,6 +137,9 @@ const NovoLaudo = ({ isOpen, onClose, onLaudoCreated }) => {
       );
 
       if (response.status === 201 || response.status === 200) {
+        // Salvar laudo no contexto
+        updateProjectData('laudo', { ...formData, id: response.data.id });
+        
         // Reset form
         setFormData({
           avaliacaoId: '',

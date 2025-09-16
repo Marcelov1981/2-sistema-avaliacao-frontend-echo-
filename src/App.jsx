@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Clientes from './components/Cliente';
 import Orcamentos from './components/Orçamentos';
 import Projetos from './components/Projetos';
@@ -12,15 +12,28 @@ import NovaAvaliacao from './components/NovaAvaliacao';
 import PropertyAnalysisSystem from './components/PropertyAnalysisSystem';
 import AIImageAnalysis from './components/AIImageAnalysis';
 import ConfiguracaoLogo from './components/ConfiguracaoLogo';
+import ConfiguracoesGerais from './components/ConfiguracoesGerais';
+import EdicaoConfiguracoes from './components/EdicaoConfiguracoes';
+import PlanosAssinatura from './components/PlanosAssinatura';
+import PagamentoPagina from './components/PagamentoPagina';
+import PagamentoSucesso from './components/PagamentoSucesso';
+import PerfilUsuario from './components/PerfilUsuario';
+import Autenticacao from './components/Autenticacao';
+import GerenciamentoCartoes from './components/GerenciamentoCartoes';
+import PrivacidadeLGPD from './components/PrivacidadeLGPD';
+import GerenciamentoCreditos from './components/GerenciamentoCreditos';
+import CadastroUsuario from './components/CadastroUsuario';
+import FormasPagamento from './components/FormasPagamento';
+import CustomHeader from './components/CustomHeader';
+import { ProjectProvider } from './contexts/ProjectContext';
 
 import { appStyles, getSidebarStyles, otherStyles } from './styles/appStyles';
 
 const SaaSApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [_user, setUser] = useState(null);
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  // Usando inputs não controlados para evitar interferência
-  const [isLogin, setIsLogin] = useState(true);
   const [showNovoCliente, setShowNovoCliente] = useState(false);
   const [showNovoProjeto, setShowNovoProjeto] = useState(false);
   const [showNovoOrcamento, setShowNovoOrcamento] = useState(false);
@@ -28,58 +41,37 @@ const SaaSApp = () => {
   const [showNovaAvaliacao, setShowNovaAvaliacao] = useState(false);
   const [showAnaliseImagens, setShowAnaliseImagens] = useState(false);
   const [showConfiguracaoLogo, setShowConfiguracaoLogo] = useState(false);
-  
-  // Refs para os inputs
-  const emailRef = useRef(null);
-  const passwordRef = useRef(null);
+  const [showEdicaoConfiguracoes, setShowEdicaoConfiguracoes] = useState(false);
+  const [_showGerenciamentoCartoes, setShowGerenciamentoCartoes] = useState(false);
+  const [tipoEdicaoConfiguracao, setTipoEdicaoConfiguracao] = useState(null);
+  const [selectedPlan, setSelectedPlan] = useState(null);
 
-  // Simular verificação de autenticação ao carregar
+  // Verificação de autenticação ao carregar
   useEffect(() => {
-    const savedAuth = sessionStorage.getItem('isAuthenticated');
-    if (savedAuth === 'true') {
+    const savedUser = localStorage.getItem('user');
+    const savedToken = localStorage.getItem('token');
+    if (savedUser && savedToken) {
+      setUser(JSON.parse(savedUser));
       setIsAuthenticated(true);
     }
   }, []);
 
-  // Limpar formulário quando o estado de autenticação mudar
-  useEffect(() => {
-    if (!isAuthenticated) {
-      if (emailRef.current) emailRef.current.value = '';
-      if (passwordRef.current) passwordRef.current.value = '';
-    }
-  }, [isAuthenticated]);
-
-  // Handler apenas para limitar senha
-  const handlePasswordInput = useCallback((e) => {
-    const value = e.target.value.slice(0, 10);
-    e.target.value = value;
+  const handleLogin = useCallback((userData) => {
+    setUser(userData);
+    setIsAuthenticated(true);
   }, []);
 
-  const handleAuth = useCallback((e) => {
-    e.preventDefault();
-    const emailValue = emailRef.current?.value || '';
-    const passwordValue = passwordRef.current?.value || '';
-    
-    if (emailValue && passwordValue && passwordValue.length >= 6 && passwordValue.length <= 10) {
-      setIsAuthenticated(true);
-      sessionStorage.setItem('isAuthenticated', 'true');
-      // Limpar formulário após login bem-sucedido
-      if (emailRef.current) emailRef.current.value = '';
-      if (passwordRef.current) passwordRef.current.value = '';
-    } else if (passwordValue.length < 6 || passwordValue.length > 10) {
-      alert('A senha deve ter entre 6 e 10 caracteres.');
-    } else {
-      alert('Por favor, preencha todos os campos.');
-    }
+  const handleRegister = useCallback((userData) => {
+    setUser(userData);
+    setIsAuthenticated(true);
   }, []);
 
   const handleLogout = useCallback(() => {
     setIsAuthenticated(false);
-    sessionStorage.removeItem('isAuthenticated');
+    setUser(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
     setActiveSection('dashboard');
-    // Limpar formulário ao fazer logout
-    if (emailRef.current) emailRef.current.value = '';
-    if (passwordRef.current) passwordRef.current.value = '';
   }, []);
 
   // Reset global styles
@@ -121,100 +113,18 @@ const SaaSApp = () => {
 
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'menu' },
+    { id: 'cadastro-usuario', label: 'Cadastro de Usuário', icon: 'user' },
     { id: 'cliente', label: 'Cliente', icon: 'user' },
     { id: 'projeto', label: 'Projeto', icon: 'folder' },
     { id: 'orcamento', label: 'Orçamento', icon: 'calculator' },
     { id: 'avaliacao', label: 'Avaliação', icon: 'star' },
     { id: 'laudo', label: 'Laudo', icon: 'file' },
     { id: 'analise-imagens', label: 'Análise de Imagens', icon: 'image' },
+    { id: 'planos-assinatura', label: 'Planos de Assinatura', icon: 'star' },
+    { id: 'cartoes', label: 'Cartões', icon: 'user' },
+    { id: 'perfil', label: 'Meu Perfil', icon: 'user' },
     { id: 'configuracoes', label: 'Configurações', icon: 'settings' },
-
   ];
-
-  // Componente de Login
-  const LoginPage = () => (
-    <div style={styles.loginContainer}>
-      <div style={styles.loginCard}>
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={styles.logoContainer}>
-            {icons.lock}
-          </div>
-          <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#1e293b', margin: '0 0 8px 0' }}>GeoMind</h1>
-          <p style={{ color: '#64748b', margin: 0 }}>
-            {isLogin ? 'Faça login em sua conta' : 'Crie sua nova conta'}
-          </p>
-        </div>
-
-        <form onSubmit={handleAuth} style={{ marginBottom: '24px' }} key={`login-form-${isAuthenticated}`}>
-          <div style={{ position: 'relative', marginBottom: '16px' }}>
-            <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>
-              {icons.mail}
-            </div>
-            <input
-              ref={emailRef}
-              id="login-email-field"
-              name="email"
-              type="email"
-              placeholder="Email"
-              defaultValue=""
-              style={{ ...styles.input, paddingLeft: '50px', marginBottom: 0 }}
-              autoComplete="off"
-              autoFocus={!isAuthenticated}
-              required
-            />
-          </div>
-          
-          <div style={{ position: 'relative', marginBottom: '24px' }}>
-            <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <circle cx="12" cy="16" r="1"></circle>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
-            </div>
-            <input
-              ref={passwordRef}
-              id="login-password-field"
-              name="password"
-              type="password"
-              placeholder="Senha (6-10 caracteres)"
-              defaultValue=""
-              onInput={handlePasswordInput}
-              minLength={6}
-              maxLength={10}
-              style={{ ...styles.input, paddingLeft: '50px', marginBottom: 0 }}
-              autoComplete="off"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            style={styles.button}
-            onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-            onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
-          >
-            {isLogin ? 'Entrar' : 'Cadastrar'}
-          </button>
-        </form>
-
-        <div style={{ textAlign: 'center' }}>
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              color: '#64748b', 
-              cursor: 'pointer',
-              fontSize: '16px'
-            }}
-          >
-            {isLogin ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Faça login'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 
   // Componente de Sidebar
   const Sidebar = () => (
@@ -371,6 +281,68 @@ const SaaSApp = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            </>
+          );
+        
+        case 'cadastro-usuario':
+          return (
+            <>
+              <div style={styles.pageHeader}>
+                <h1 style={styles.pageTitle}>Cadastro de Usuário</h1>
+                <p style={styles.pageSubtitle}>Cadastre sua empresa/pessoa para usar o GeoMind</p>
+              </div>
+              
+              <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                <CadastroUsuario 
+                  onNavigateToPlanos={() => setActiveSection('planos-assinatura')}
+                />
+              </div>
+            </>
+          );
+
+        case 'planos-assinatura':
+          return (
+            <>
+              <div style={styles.pageHeader}>
+                <h1 style={styles.pageTitle}>Planos de Assinatura</h1>
+                <p style={styles.pageSubtitle}>Escolha o plano ideal para suas necessidades</p>
+              </div>
+              
+              <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+                <PlanosAssinatura 
+                  onPlanoSelecionado={(plano) => {
+                    setSelectedPlan(plano);
+                    setActiveSection('formas-pagamento');
+                  }}
+                  onNavigate={(section, data) => {
+                    if (section === 'pagamento') {
+                      setSelectedPlan(data.plano);
+                      setActiveSection('formas-pagamento');
+                    }
+                  }}
+                />
+              </div>
+            </>
+          );
+
+        case 'formas-pagamento':
+          return (
+            <>
+              <div style={styles.pageHeader}>
+                <h1 style={styles.pageTitle}>Formas de Pagamento</h1>
+                <p style={styles.pageSubtitle}>Configure sua forma de pagamento preferida</p>
+              </div>
+              
+              <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+                <FormasPagamento 
+                  planoSelecionado={selectedPlan}
+                  onPagamentoConfigurado={(dadosPagamento) => {
+                    console.log('Pagamento configurado:', dadosPagamento);
+                    // Aqui você pode redirecionar para uma página de confirmação
+                    setActiveSection('dashboard');
+                  }}
+                />
               </div>
             </>
           );
@@ -565,30 +537,41 @@ const SaaSApp = () => {
         case 'analise-imagens':
           return <AIImageAnalysis />;
 
+
+
+        case 'pagamento':
+          return <PagamentoPagina plano={selectedPlan} onNavigate={(section) => setActiveSection(section)} />;
+
+        case 'pagamento-sucesso':
+          return <PagamentoSucesso plano={selectedPlan} onNavigate={(section) => setActiveSection(section)} />;
+
         case 'configuracoes':
           return (
-            <>
-              <div style={styles.pageHeader}>
-                <h1 style={styles.pageTitle}>Configurações</h1>
-                <button 
-                  style={styles.actionButton}
-                  onClick={() => setShowConfiguracaoLogo(true)}
-                  onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-                  onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
-                >
-                  Configurar Logo
-                </button>
-              </div>
-              
-              <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-                <div style={styles.card}>
-                  <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px' }}>Configurações do Sistema</h3>
-                  <p style={{ color: '#64748b', fontSize: '16px', lineHeight: '1.6' }}>
-                    Gerencie as configurações do seu sistema aqui.
-                  </p>
-                </div>
-              </div>
-            </>
+            <ConfiguracoesGerais 
+              onOpenConfiguracao={(tipo) => {
+                if (tipo === 'logo') {
+                  setShowConfiguracaoLogo(true);
+                }
+              }}
+              onOpenEdicao={(tipo) => {
+                setTipoEdicaoConfiguracao(tipo);
+                setShowEdicaoConfiguracoes(true);
+              }}
+            />
+          );
+
+        case 'cartoes':
+          return (
+            <GerenciamentoCartoes 
+              onClose={() => setShowGerenciamentoCartoes(false)}
+            />
+          );
+
+        case 'perfil':
+          return (
+            <PerfilUsuario 
+              onNavigate={(section) => setActiveSection(section)}
+            />
           );
 
         default:
@@ -620,7 +603,7 @@ const SaaSApp = () => {
                       Módulo {activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
                     </h3>
                     <p style={{ color: '#64748b', fontSize: '16px', lineHeight: '1.6' }}>
-                      Este módulo está em desenvolvimento. Em breve você poderá gerenciar seus {activeSection}s aqui.
+                      Funcionalidade disponível. Selecione uma opção no menu lateral.
                     </p>
                   </div>
                 </div>
@@ -632,6 +615,7 @@ const SaaSApp = () => {
 
     return (
       <div style={styles.mainContent}>
+        <CustomHeader />
         <div style={styles.contentArea}>
           {renderContent()}
         </div>
@@ -643,17 +627,18 @@ const SaaSApp = () => {
   if (!isAuthenticated) {
     return (
       <div style={styles.appContainer}>
-        <LoginPage />
+        <Autenticacao onLogin={handleLogin} onRegister={handleRegister} />
       </div>
     );
   }
 
   return (
-    <div style={styles.appContainer}>
-      <div style={styles.mainAppContainer}>
-        <Sidebar />
-        <MainContent />
-      </div>
+    <ProjectProvider>
+      <div style={styles.appContainer}>
+        <div style={styles.mainAppContainer}>
+          <Sidebar />
+          <MainContent />
+        </div>
       <NovoCliente
         isOpen={showNovoCliente}
         onClose={() => setShowNovoCliente(false)}
@@ -709,7 +694,17 @@ const SaaSApp = () => {
          isOpen={showConfiguracaoLogo}
          onClose={() => setShowConfiguracaoLogo(false)}
        />
-    </div>
+       
+       <EdicaoConfiguracoes
+         isOpen={showEdicaoConfiguracoes}
+         onClose={() => {
+           setShowEdicaoConfiguracoes(false);
+           setTipoEdicaoConfiguracao(null);
+         }}
+         tipoConfiguracao={tipoEdicaoConfiguracao}
+       />
+      </div>
+    </ProjectProvider>
   );
 };
 

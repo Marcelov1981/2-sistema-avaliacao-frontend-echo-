@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from './Modal';
 import ImageUpload from './ImageUpload';
+import CepService from '../utils/CepService';
+import { API_ENDPOINTS, getAuthHeaders } from '../config/api';
+import authService from '../services/authService';
 
 const EditarProjeto = ({ isOpen, onClose, onSuccess, projeto }) => {
   const [formData, setFormData] = useState({
@@ -24,6 +27,7 @@ const EditarProjeto = ({ isOpen, onClose, onSuccess, projeto }) => {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [cepLoading, setCepLoading] = useState(false);
 
   const tiposImovel = [
     'Residencial',
@@ -76,20 +80,79 @@ const EditarProjeto = ({ isOpen, onClose, onSuccess, projeto }) => {
 
   const fetchClientes = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/clientes');
-      setClientes(response.data);
+      // Verificar se está autenticado
+      if (!authService.isAuthenticated()) {
+        console.error('Usuário não autenticado');
+        setError('Usuário não autenticado');
+        return;
+      }
+      
+      const response = await axios.get(API_ENDPOINTS.clientes.base, {
+        headers: getAuthHeaders()
+      });
+      
+      // Verificar se a resposta tem o formato esperado
+      if (response.data.success) {
+        setClientes(response.data.data || []);
+      } else {
+        setClientes(response.data || []);
+      }
     } catch (error) {
       console.error('Erro ao carregar clientes:', error);
-      setError('Erro ao carregar lista de clientes');
+      if (error.response?.status === 401) {
+        setError('Sessão expirada. Faça login novamente.');
+      } else {
+        setError('Erro ao carregar lista de clientes');
+      }
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Formatar CEP automaticamente
+    if (name === 'cep_imovel') {
+      const cepFormatado = CepService.formatarCep(value);
+      setFormData(prev => ({
+        ...prev,
+        [name]: cepFormatado
+      }));
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+  
+  const buscarEnderecoPorCep = async () => {
+    if (!formData.cep_imovel || !CepService.validarCep(formData.cep_imovel)) {
+      alert('Por favor, digite um CEP válido');
+      return;
+    }
+    
+    setCepLoading(true);
+    
+    try {
+      const resultado = await CepService.buscarEnderecoPorCep(formData.cep_imovel);
+      
+      if (resultado.success) {
+        setFormData(prev => ({
+          ...prev,
+          endereco_imovel: resultado.data.endereco,
+          cidade_imovel: resultado.data.cidade,
+          estado_imovel: resultado.data.estado
+        }));
+        alert('Endereço encontrado e preenchido automaticamente!');
+      } else {
+        alert(`Erro ao buscar CEP: ${resultado.error}`);
+      }
+    } catch {
+      alert('Erro ao buscar endereço. Tente novamente.');
+    } finally {
+      setCepLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -103,7 +166,15 @@ const EditarProjeto = ({ isOpen, onClose, onSuccess, projeto }) => {
         images: images
       };
 
-      await axios.put(`http://localhost:3001/api/projetos/${projeto.id}`, projetoData);
+      // Verificar se está autenticado
+      if (!authService.isAuthenticated()) {
+        setError('Usuário não autenticado');
+        return;
+      }
+      
+      await axios.put(`${API_ENDPOINTS.projetos.base}/${projeto.id}`, projetoData, {
+        headers: getAuthHeaders()
+      });
       
       onSuccess();
       onClose();
@@ -127,7 +198,11 @@ const EditarProjeto = ({ isOpen, onClose, onSuccess, projeto }) => {
       setImages([]);
     } catch (error) {
       console.error('Erro ao atualizar projeto:', error);
-      setError(error.response?.data?.message || 'Erro ao atualizar projeto');
+      if (error.response?.status === 401) {
+        setError('Sessão expirada. Faça login novamente.');
+      } else {
+        setError(error.response?.data?.message || 'Erro ao atualizar projeto');
+      }
     } finally {
       setLoading(false);
     }
@@ -349,16 +424,34 @@ const EditarProjeto = ({ isOpen, onClose, onSuccess, projeto }) => {
           </div>
           <div style={styles.formGroup}>
             <label style={styles.label}>CEP</label>
-            <input
-              type="text"
-              name="cep_imovel"
-              value={formData.cep_imovel}
-              onChange={handleInputChange}
-              style={styles.input}
-              placeholder="00000-000"
-              onFocus={(e) => e.target.style.borderColor = '#0d9488'}
-              onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-            />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="text"
+                name="cep_imovel"
+                value={formData.cep_imovel}
+                onChange={handleInputChange}
+                style={{ ...styles.input, flex: 1 }}
+                placeholder="00000-000"
+                maxLength="9"
+                onFocus={(e) => e.target.style.borderColor = '#0d9488'}
+                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+              />
+              <button
+                type="button"
+                onClick={buscarEnderecoPorCep}
+                disabled={cepLoading || !formData.cep_imovel || !CepService.validarCep(formData.cep_imovel)}
+                style={{
+                  ...styles.button,
+                  backgroundColor: cepLoading ? '#9ca3af' : '#0d9488',
+                  cursor: cepLoading ? 'not-allowed' : 'pointer',
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  minWidth: '80px'
+                }}
+              >
+                {cepLoading ? 'Buscando...' : 'Buscar'}
+              </button>
+            </div>
           </div>
         </div>
 

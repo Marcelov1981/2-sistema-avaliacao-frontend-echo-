@@ -1,0 +1,68 @@
+{
+  "geral": {
+    "idioma": "pt-BR",
+    "tema": "dark",
+    "notificacoes": {
+      "email": true,
+      "push": true,
+      "sms": false
+    }
+  },
+  "usuario": {
+    "perfil": {
+      "nome": "",
+      "email": "",
+      "telefone": "",
+      "empresa": ""
+    },
+    "preferencias": {
+      "timezone": "America/Sao_Paulo",
+      "formato_data": "DD/MM/YYYY",
+      "formato_moeda": "BRL"
+    },
+    "seguranca": {
+      "autenticacao_dois_fatores": false,
+      "sessao_timeout": 30
+    }
+  },
+  "sistema": {
+    "backup": {
+      "automatico": true,
+      "frequencia": "diario",
+      "retencao_dias": 30
+    },
+    "logs": {
+      "nivel": "info",
+      "retencao_dias": 7
+    },
+    "integracao": {
+      "api_externa": false,
+      "webhook_url": ""
+    }
+  },
+  "relatorios": {
+    "formatos": [
+      "PDF",
+      "Excel"
+    ],
+    "agendamento": {
+      "ativo": false,
+      "frequencia": "semanal",
+      "dia_semana": 1
+    },
+    "filtros": {
+      "periodo_padrao": "30_dias",
+      "incluir_graficos": true
+    },
+    "templates": {
+      "cabecalho_personalizado": "",
+      "rodape_personalizado": "",
+      "logo_relatorio": ""
+    },
+    "assinatura": {
+      "digital_ativa": false,
+      "certificado_path": "",
+      "senha_certificado": ""
+    }
+  }
+}

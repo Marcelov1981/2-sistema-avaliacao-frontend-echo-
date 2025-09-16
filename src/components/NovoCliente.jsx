@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from './Modal';
+import CepService from '../utils/CepService';
+import { useProject } from '../hooks/useProject';
+import { API_ENDPOINTS, getAuthHeaders } from '../config/api';
+import authService from '../services/authService';
 
 const NovoCliente = ({ isOpen, onClose, onClienteCreated }) => {
+  const { getProjectDataForForm, updateProjectData, hasActiveProject } = useProject();
+  
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
@@ -20,13 +26,140 @@ const NovoCliente = ({ isOpen, onClose, onClienteCreated }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [cepLoading, setCepLoading] = useState(false);
+  const [buscaReversaLoading, setBuscaReversaLoading] = useState(false);
+
+  // Preencher dados do projeto quando o modal abrir
+  useEffect(() => {
+    if (isOpen && hasActiveProject) {
+      const projectData = getProjectDataForForm('cliente');
+      if (Object.keys(projectData).length > 0) {
+        setFormData(projectData);
+      }
+    } else if (isOpen && !hasActiveProject) {
+      // Reset form se não há projeto ativo
+      setFormData({
+        nome: '',
+        email: '',
+        telefone: '',
+        documento: '',
+        tipo_pessoa: 'fisica',
+        endereco: '',
+        cidade: '',
+        estado: '',
+        cep: '',
+        registroProfissional: '',
+        tipoRegistro: '',
+        observacoes: '',
+        status: 'ativo'
+      });
+    }
+  }, [isOpen, hasActiveProject, getProjectDataForForm]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Formatar CEP automaticamente
+    if (name === 'cep') {
+      const cepFormatado = CepService.formatarCep(value);
+      setFormData(prev => ({
+        ...prev,
+        [name]: cepFormatado
+      }));
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+  
+  const buscarEnderecoPorCep = async () => {
+    if (!formData.cep || !CepService.validarCep(formData.cep)) {
+      alert('Por favor, digite um CEP válido');
+      return;
+    }
+    
+    setCepLoading(true);
+    
+    try {
+      const resultado = await CepService.buscarEnderecoPorCep(formData.cep);
+      
+      if (resultado.success) {
+        setFormData(prev => ({
+          ...prev,
+          endereco: resultado.data.endereco,
+          cidade: resultado.data.cidade,
+          estado: resultado.data.estado
+        }));
+        alert('Endereço encontrado e preenchido automaticamente!');
+      } else {
+        alert(`Erro ao buscar CEP: ${resultado.error}`);
+      }
+    } catch {
+      alert('Erro ao buscar endereço. Tente novamente.');
+    } finally {
+      setCepLoading(false);
+    }
+  };
+
+  const buscarCepPorEndereco = async () => {
+    if (!formData.endereco || !formData.cidade || !formData.estado) {
+      alert('Por favor, preencha endereço, cidade e estado para buscar o CEP');
+      return;
+    }
+    
+    if (formData.endereco.length < 3 || formData.cidade.length < 3) {
+      alert('Endereço e cidade devem ter pelo menos 3 caracteres');
+      return;
+    }
+    
+    setBuscaReversaLoading(true);
+    
+    try {
+      const resultado = await CepService.buscarCepPorEndereco(
+        formData.estado,
+        formData.cidade,
+        formData.endereco
+      );
+      
+      if (resultado.success && resultado.data.length > 0) {
+        
+        if (resultado.data.length === 1) {
+          // Se encontrou apenas um resultado, preenche automaticamente
+          setFormData(prev => ({
+            ...prev,
+            cep: resultado.data[0].cep
+          }));
+          alert('CEP encontrado e preenchido automaticamente!');
+        } else {
+          // Se encontrou múltiplos resultados, mostra para o usuário escolher
+          const opcoes = resultado.data.map((item, index) => 
+            `${index + 1}. ${item.cep} - ${item.endereco}, ${item.bairro}`
+          ).join('\n');
+          
+          const escolha = prompt(
+            `Encontrados ${resultado.data.length} CEPs. Escolha um número:\n\n${opcoes}`
+          );
+          
+          const indice = parseInt(escolha) - 1;
+          if (indice >= 0 && indice < resultado.data.length) {
+            setFormData(prev => ({
+              ...prev,
+              cep: resultado.data[indice].cep
+            }));
+            alert('CEP selecionado e preenchido!');
+          }
+        }
+      } else {
+        alert(`Erro ao buscar CEP: ${resultado.error || 'Nenhum CEP encontrado'}`);
+      }
+    } catch {
+      alert('Erro ao buscar CEP. Tente novamente.');
+    } finally {
+      setBuscaReversaLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -35,10 +168,24 @@ const NovoCliente = ({ isOpen, onClose, onClienteCreated }) => {
     setError('');
 
     try {
+      // Verificar se está autenticado
+      if (!authService.isAuthenticated()) {
+        setError('Usuário não autenticado');
+        return;
+      }
+
       const response = await axios.post(
-        'https://geomind-service-production.up.railway.app/api/v1/clientes',
-        formData
+        API_ENDPOINTS.clientes.base,
+        formData,
+        {
+          headers: getAuthHeaders()
+        }
       );
+      
+      // Salvar dados do cliente no contexto se há projeto ativo
+      if (hasActiveProject) {
+        updateProjectData('cliente', { ...formData, id: response.data.id });
+      }
       
       // Reset form
       setFormData({
@@ -64,8 +211,12 @@ const NovoCliente = ({ isOpen, onClose, onClienteCreated }) => {
       
       onClose();
     } catch (err) {
-      setError('Erro ao criar cliente. Tente novamente.');
       console.error('Erro ao criar cliente:', err);
+      if (err.response?.status === 401) {
+        setError('Sessão expirada. Faça login novamente.');
+      } else {
+        setError('Erro ao criar cliente. Tente novamente.');
+      }
     } finally {
       setLoading(false);
     }
@@ -234,17 +385,36 @@ const NovoCliente = ({ isOpen, onClose, onClienteCreated }) => {
 
         <div style={styles.formGroup}>
           <label style={styles.label}>Endereço *</label>
-          <input
-            type="text"
-            name="endereco"
-            value={formData.endereco}
-            onChange={handleInputChange}
-            style={styles.input}
-            required
-            onFocus={(e) => e.target.style.borderColor = '#10b981'}
-            onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-          />
-        </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input
+              type="text"
+              name="endereco"
+              value={formData.endereco}
+              onChange={handleInputChange}
+              style={{ ...styles.input, flex: 1 }}
+              required
+              onFocus={(e) => e.target.style.borderColor = '#10b981'}
+              onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+            />
+            <button
+              type="button"
+              onClick={buscarCepPorEndereco}
+              disabled={buscaReversaLoading || !formData.endereco || !formData.cidade || !formData.estado}
+              style={{
+                ...styles.button,
+                backgroundColor: buscaReversaLoading ? '#9ca3af' : '#3b82f6',
+                cursor: buscaReversaLoading ? 'not-allowed' : 'pointer',
+                padding: '8px 16px',
+                fontSize: '14px',
+                minWidth: '100px'
+              }}
+              title="Use apenas se não souber o CEP do imóvel"
+            >
+              {buscaReversaLoading ? 'Buscando...' : 'Buscar CEP'}
+            </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Ou preencha endereço, cidade e estado e clique em "Buscar CEP" se não souber o CEP</p>
+            </div>
 
         <div style={styles.row}>
           <div style={styles.formGroup}>
@@ -276,16 +446,38 @@ const NovoCliente = ({ isOpen, onClose, onClienteCreated }) => {
           </div>
           <div style={styles.formGroup}>
             <label style={styles.label}>CEP *</label>
-            <input
-              type="text"
-              name="cep"
-              value={formData.cep}
-              onChange={handleInputChange}
-              style={styles.input}
-              required
-              onFocus={(e) => e.target.style.borderColor = '#10b981'}
-              onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-            />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="text"
+                name="cep"
+                value={formData.cep}
+                onChange={handleInputChange}
+                style={{ ...styles.input, flex: 1 }}
+                required
+                placeholder="00000-000"
+                maxLength="9"
+                onFocus={(e) => e.target.style.borderColor = '#10b981'}
+                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+              />
+              <button
+                type="button"
+                onClick={buscarEnderecoPorCep}
+                disabled={cepLoading || !formData.cep || !CepService.validarCep(formData.cep)}
+                style={{
+                  ...styles.button,
+                  backgroundColor: cepLoading ? '#9ca3af' : '#10b981',
+                  cursor: cepLoading ? 'not-allowed' : 'pointer',
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  minWidth: '80px'
+                }}
+              >
+                {cepLoading ? 'Buscando...' : 'Buscar'}
+              </button>
+            </div>
+            <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+              Digite o CEP e clique em "Buscar" para preencher automaticamente o endereço
+            </p>
           </div>
         </div>
 

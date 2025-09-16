@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import jsPDF from 'jspdf';
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config/api';
 import { addLogoToPDF } from '../utils/LogoUtils.jsx';
 
 const LaudoPDF = ({ avaliacao, onClose }) => {
@@ -38,7 +39,7 @@ const LaudoPDF = ({ avaliacao, onClose }) => {
       let yPosition = 30;
 
       // Adicionar logomarca se configurada
-      await addLogoToPDF(doc, pageWidth, doc.internal.pageSize.height, margin);
+      await addLogoToPDF(doc, pageWidth, doc.internal.pageSize.height, margin, true);
 
       // Cabeçalho
       doc.setFontSize(20);
@@ -194,7 +195,7 @@ const LaudoPDF = ({ avaliacao, onClose }) => {
         status: 'emitido'
       };
 
-      await axios.post('https://geomind-service-production.up.railway.app/api/v1/laudos', laudoPayload);
+      await axios.post(API_ENDPOINTS.laudos.base, laudoPayload);
     } catch (error) {
       console.error('Erro ao salvar laudo:', error);
       // Não bloquear a geração do PDF por erro no backend

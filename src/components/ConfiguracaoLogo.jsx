@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Button, Card, Row, Col, Slider, Select, message, Space, Typography, Image } from 'antd';
-import { UploadOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { Upload, Button, Card, Row, Col, Slider, Select, message, Space, Typography, Image, Switch } from 'antd';
+import { UploadOutlined, DeleteOutlined, EyeOutlined, SaveOutlined } from '@ant-design/icons';
+import { API_BASE_URL } from '../config/api';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -10,21 +11,55 @@ const ConfiguracaoLogo = ({ isOpen, onClose }) => {
     logoUrl: localStorage.getItem('logoUrl') || '',
     logoSize: parseInt(localStorage.getItem('logoSize')) || 100,
     logoPosition: localStorage.getItem('logoPosition') || 'top-right',
-    logoOpacity: parseInt(localStorage.getItem('logoOpacity')) || 100
+    logoOpacity: parseInt(localStorage.getItem('logoOpacity')) || 100,
+    showInPages: localStorage.getItem('showInPages') !== 'false',
+    showInReports: localStorage.getItem('showInReports') !== 'false'
   });
   const [previewVisible, setPreviewVisible] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    // Carregar configurações salvas
+    loadLogoConfig();
+  }, []);
+
+  const loadLogoConfig = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const response = await fetch(`${API_BASE_URL}/api/v1/configuracoes/logo`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data) {
+            setLogoConfig(data.data);
+            // Salvar no localStorage como backup
+            Object.keys(data.data).forEach(key => {
+              localStorage.setItem(key, data.data[key].toString());
+            });
+            return;
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Carregando configurações do localStorage');
+    }
+    
+    // Fallback para localStorage
     const savedConfig = {
       logoUrl: localStorage.getItem('logoUrl') || '',
       logoSize: parseInt(localStorage.getItem('logoSize')) || 100,
       logoPosition: localStorage.getItem('logoPosition') || 'top-right',
-      logoOpacity: parseInt(localStorage.getItem('logoOpacity')) || 100
+      logoOpacity: parseInt(localStorage.getItem('logoOpacity')) || 100,
+      showInPages: localStorage.getItem('showInPages') !== 'false',
+      showInReports: localStorage.getItem('showInReports') !== 'false'
     };
     setLogoConfig(savedConfig);
-  }, []);
+  };
 
   const handleUpload = (file) => {
     setUploading(true);
@@ -64,6 +99,34 @@ const ConfiguracaoLogo = ({ isOpen, onClose }) => {
     const newConfig = { ...logoConfig, [key]: value };
     setLogoConfig(newConfig);
     localStorage.setItem(key, value.toString());
+  };
+
+  const saveLogoConfig = async () => {
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const response = await fetch(`${API_BASE_URL}/api/v1/configuracoes/logo`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(logoConfig)
+        });
+        
+        if (response.ok) {
+          message.success('Configurações de logo salvas com sucesso!');
+        } else {
+          throw new Error('Erro ao salvar configurações');
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao salvar configurações:', err);
+      message.error('Erro ao salvar configurações. Usando armazenamento local.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleRemoveLogo = () => {
@@ -196,6 +259,47 @@ const ConfiguracaoLogo = ({ isOpen, onClose }) => {
                       100: '100%'
                     }}
                   />
+                </div>
+
+                {/* Exibição em Páginas */}
+                <div>
+                  <Text strong>Exibir nas páginas do sistema:</Text>
+                  <br />
+                  <Switch
+                    checked={logoConfig.showInPages}
+                    onChange={(checked) => handleConfigChange('showInPages', checked)}
+                    style={{ marginTop: 8 }}
+                  />
+                  <Text style={{ marginLeft: 8 }}>
+                    {logoConfig.showInPages ? 'Ativado' : 'Desativado'}
+                  </Text>
+                </div>
+
+                {/* Exibição em Relatórios */}
+                <div>
+                  <Text strong>Exibir nos relatórios:</Text>
+                  <br />
+                  <Switch
+                    checked={logoConfig.showInReports}
+                    onChange={(checked) => handleConfigChange('showInReports', checked)}
+                    style={{ marginTop: 8 }}
+                  />
+                  <Text style={{ marginLeft: 8 }}>
+                    {logoConfig.showInReports ? 'Ativado' : 'Desativado'}
+                  </Text>
+                </div>
+
+                {/* Botão Salvar */}
+                <div style={{ marginTop: 16 }}>
+                  <Button
+                    type="primary"
+                    icon={<SaveOutlined />}
+                    loading={saving}
+                    onClick={saveLogoConfig}
+                    block
+                  >
+                    Salvar Configurações
+                  </Button>
                 </div>
               </Space>
             </Card>

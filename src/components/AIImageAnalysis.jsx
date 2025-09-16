@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import GeminiService from '../utils/GeminiService';
 import PDFGenerator from '../utils/PDFGenerator';
+import SafariNotification from './SafariNotification.jsx';
+import SafariCompatibility from '../utils/SafariCompatibility.js';
 
 const AIImageAnalysis = () => {
   const [activeTab, setActiveTab] = useState('analysis');
@@ -206,6 +208,11 @@ const AIImageAnalysis = () => {
       return;
     }
 
+    // Mostra instruções específicas para Safari se necessário
+    if (SafariCompatibility.isSafari() && !SafariCompatibility.supportsAutomaticDownloads()) {
+      SafariCompatibility.showSafariInstructions('baixar o relatório PDF');
+    }
+
     try {
       const pdfGenerator = new PDFGenerator();
       
@@ -391,6 +398,11 @@ const AIImageAnalysis = () => {
 
   return (
     <div style={styles.container}>
+      <SafariNotification 
+        action="gerar relatórios PDF e fazer upload de imagens"
+        showOnMount={true}
+        autoHide={true}
+      />
       <div style={styles.card}>
         <h1 style={styles.title}>Análise de Imóveis com IA</h1>
         

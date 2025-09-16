@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_ENDPOINTS, getAuthHeaders } from '../config/api';
+import authService from '../services/authService';
 import Modal from './Modal';
+import { useProject } from '../hooks/useProject';
 import ImageUpload from './ImageUpload';
 
 const NovoOrcamento = ({ isOpen, onClose, onOrcamentoCreated }) => {
+  const { projectData, updateProjectData } = useProject();
+  
   const [formData, setFormData] = useState({
     projetoId: '',
     descricao: '',
@@ -43,17 +48,43 @@ const NovoOrcamento = ({ isOpen, onClose, onOrcamentoCreated }) => {
   useEffect(() => {
     if (isOpen) {
       fetchProjetos();
+      
+      // Preencher projeto ativo se existe
+      if (projectData.projeto) {
+        setFormData(prev => ({
+          ...prev,
+          projetoId: projectData.projeto._id || projectData.projeto.id || ''
+        }));
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, projectData.projeto]);
 
   const fetchProjetos = async () => {
     setLoadingProjetos(true);
     try {
-      const response = await axios.get('https://geomind-service-production.up.railway.app/api/v1/projetos');
-      setProjetos(response.data || []);
+      // Verificar se está autenticado
+      if (!authService.isAuthenticated()) {
+        setError('Usuário não autenticado');
+        return;
+      }
+      
+      const response = await axios.get(API_ENDPOINTS.realstate.base, {
+        headers: getAuthHeaders()
+      });
+      
+      // Verificar se a resposta tem o formato esperado
+      if (response.data.success) {
+        setProjetos(response.data.data || []);
+      } else {
+        setProjetos(response.data || []);
+      }
     } catch (error) {
       console.error('Erro ao carregar projetos:', error);
-      setError('Erro ao carregar lista de projetos');
+      if (error.response?.status === 401) {
+        setError('Sessão expirada. Faça login novamente.');
+      } else {
+        setError('Erro ao carregar lista de projetos');
+      }
     } finally {
       setLoadingProjetos(false);
     }
@@ -73,33 +104,49 @@ const NovoOrcamento = ({ isOpen, onClose, onOrcamentoCreated }) => {
     setError('');
 
     try {
+      // Verificar se está autenticado
+      if (!authService.isAuthenticated()) {
+        setError('Usuário não autenticado');
+        return;
+      }
+      
       const response = await axios.post(
-        'https://geomind-service-production.up.railway.app/api/v1/orcamentos',
+        API_ENDPOINTS.orcamentos.base,
         {
           ...formData,
           valorEstimado: parseFloat(formData.valorEstimado) || 0
+        },
+        {
+          headers: getAuthHeaders()
         }
       );
 
       if (response.status === 201 || response.status === 200) {
-        // Reset form
-        setFormData({
-          projetoId: '',
-          descricao: '',
-          tipoAvaliacao: '',
-          valorEstimado: '',
-          prazoEntrega: '',
-          metodologia: '',
-          observacoes: ''
-        });
-        setImages([]);
+        // Salvar orçamento no contexto
+      updateProjectData('orcamento', { ...formData, id: response.data.id });
+      
+      // Reset form
+      setFormData({
+        projetoId: '',
+        descricao: '',
+        tipoAvaliacao: '',
+        valorEstimado: '',
+        prazoEntrega: '',
+        metodologia: '',
+        observacoes: ''
+      });
+      setImages([]);
         
         onOrcamentoCreated && onOrcamentoCreated();
         onClose();
       }
     } catch (error) {
       console.error('Erro ao criar orçamento:', error);
-      setError(error.response?.data?.message || 'Erro ao criar orçamento');
+      if (error.response?.status === 401) {
+        setError('Sessão expirada. Faça login novamente.');
+      } else {
+        setError(error.response?.data?.message || 'Erro ao criar orçamento');
+      }
     } finally {
       setLoading(false);
     }
@@ -206,7 +253,7 @@ const NovoOrcamento = ({ isOpen, onClose, onOrcamentoCreated }) => {
             >
               <option value="">Selecione um projeto</option>
               {projetos.map(projeto => (
-                <option key={projeto.id} value={projeto.id}>
+                <option key={projeto._id} value={projeto._id}>
                   {projeto.nome} - {projeto.cliente?.nome || 'Cliente não informado'}
                 </option>
               ))}

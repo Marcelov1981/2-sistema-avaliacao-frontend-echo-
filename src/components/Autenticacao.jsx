@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Card, Form, Input, Button, Typography, Tabs, message, Checkbox, Divider } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, IdcardOutlined } from '@ant-design/icons';
+import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 
 const { Title, Text, Link } = Typography;
 const { TabPane } = Tabs;
@@ -14,30 +16,39 @@ const Autenticacao = ({ onLogin, onRegister }) => {
   const handleLogin = async (values) => {
     setLoading(true);
     try {
-      // Simular autenticação
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Dados mockados do usuário
-      const userData = {
-        id: 'user_123',
+      const response = await axios.post(`${API_BASE_URL}/usuarios/login`, {
         email: values.email,
-        nome: 'Usuário Teste',
-        plano: null, // Usuário sem plano inicialmente
-        dataLogin: new Date().toISOString(),
-        token: 'mock_jwt_token_' + Date.now()
-      };
+        senha: values.password
+      });
       
-      // Salvar no localStorage
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('token', userData.token);
-      
-      message.success('Login realizado com sucesso!');
-      
-      if (onLogin) {
-        onLogin(userData);
+      if (response.data && response.data.success) {
+        const userData = {
+          id: response.data.usuario.id,
+          email: response.data.usuario.email,
+          nome: response.data.usuario.nome,
+          plano: response.data.usuario.plano || null,
+          dataLogin: new Date().toISOString(),
+          token: response.data.token
+        };
+        
+        // Salvar no localStorage
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('token', userData.token);
+        
+        message.success('Login realizado com sucesso!');
+        
+        if (onLogin) {
+          onLogin(userData);
+        }
+      } else {
+        message.error('Credenciais inválidas.');
       }
-    } catch {
-      message.error('Erro ao fazer login. Verifique suas credenciais.');
+    } catch (error) {
+      if (error.response?.status === 401) {
+        message.error('Email ou senha incorretos.');
+      } else {
+        message.error('Erro ao fazer login. Tente novamente.');
+      }
     } finally {
       setLoading(false);
     }
@@ -46,32 +57,48 @@ const Autenticacao = ({ onLogin, onRegister }) => {
   const handleRegister = async (values) => {
     setLoading(true);
     try {
-      // Simular cadastro
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const userData = {
-        id: 'user_' + Date.now(),
-        email: values.email,
+      const response = await axios.post(`${API_BASE_URL}/usuarios/registro`, {
         nome: values.nome,
+        email: values.email,
+        senha: values.password,
         telefone: values.telefone,
         cpfCnpj: values.cpfCnpj,
-        empresa: values.empresa,
-        plano: null,
-        dataCadastro: new Date().toISOString(),
-        token: 'mock_jwt_token_' + Date.now()
-      };
+        empresa: values.empresa || ''
+      });
       
-      // Salvar no localStorage
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('token', userData.token);
-      
-      message.success('Cadastro realizado com sucesso!');
-      
-      if (onRegister) {
-        onRegister(userData);
+      if (response.data && response.data.success) {
+        const userData = {
+          id: response.data.usuario.id,
+          email: response.data.usuario.email,
+          nome: response.data.usuario.nome,
+          telefone: response.data.usuario.telefone,
+          cpfCnpj: response.data.usuario.cpfCnpj,
+          empresa: response.data.usuario.empresa,
+          plano: null,
+          dataCadastro: new Date().toISOString(),
+          token: response.data.token
+        };
+        
+        // Salvar no localStorage
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('token', userData.token);
+        
+        message.success('Cadastro realizado com sucesso!');
+        
+        if (onRegister) {
+          onRegister(userData);
+        }
+      } else {
+        message.error(response.data?.message || 'Erro ao realizar cadastro.');
       }
-    } catch {
-      message.error('Erro ao realizar cadastro. Tente novamente.');
+    } catch (error) {
+      if (error.response?.status === 400) {
+        message.error(error.response.data?.message || 'Dados inválidos.');
+      } else if (error.response?.status === 409) {
+        message.error('Este email já está cadastrado.');
+      } else {
+        message.error('Erro ao realizar cadastro. Tente novamente.');
+      }
     } finally {
       setLoading(false);
     }

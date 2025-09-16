@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import LaudoPDF from './LaudoPDF';
+import { API_ENDPOINTS } from '../config/api';
 
 const Avaliacao = () => {
   const [orcamentos, setOrcamentos] = useState([]);
@@ -26,8 +27,8 @@ const Avaliacao = () => {
     setLoading(true);
     try {
       const [orcamentosResponse, avaliacoesResponse] = await Promise.all([
-        axios.get('https://geomind-service-production.up.railway.app/api/v1/orcamentos'),
-        axios.get('https://geomind-service-production.up.railway.app/api/v1/avaliacoes')
+        axios.get(API_ENDPOINTS.orcamentos.base),
+        axios.get(API_ENDPOINTS.avaliacoes.base)
       ]);
       setOrcamentos(orcamentosResponse.data || []);
       setAvaliacoes(avaliacoesResponse.data || []);
@@ -51,7 +52,7 @@ const Avaliacao = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        'https://geomind-service-production.up.railway.app/api/v1/avaliacoes',
+        API_ENDPOINTS.avaliacoes.base,
         {
           ...avaliacaoData,
           valorFinal: parseFloat(avaliacaoData.valorFinal) || 0

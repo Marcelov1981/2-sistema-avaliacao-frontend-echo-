@@ -2,12 +2,18 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from './Modal';
 import ImageUpload from './ImageUpload';
+import CepService from '../utils/CepService';
+import { useProject } from '../hooks/useProject';
+import { API_ENDPOINTS, getAuthHeaders } from '../config/api';
+import authService from '../services/authService';
 
 const NovoProjeto = ({ isOpen, onClose, onProjetoCreated }) => {
+  const { setProject, projectData } = useProject();
+  
   const [formData, setFormData] = useState({
     nome: '',
     cliente_id: '',
-    tipo_imovel: 'residencial',
+    tipo_imovel: 'casa',
     endereco_imovel: '',
     cidade_imovel: '',
     estado_imovel: '',
@@ -23,24 +29,50 @@ const NovoProjeto = ({ isOpen, onClose, onProjetoCreated }) => {
   const [loading, setLoading] = useState(false);
   const [loadingClientes, setLoadingClientes] = useState(false);
   const [error, setError] = useState('');
+  const [cepLoading, setCepLoading] = useState(false);
 
   // Carregar lista de clientes quando o modal abrir
   useEffect(() => {
     if (isOpen) {
       fetchClientes();
+      
+      // Preencher dados do cliente se há um cliente no contexto
+      if (projectData.cliente) {
+        setFormData(prev => ({
+          ...prev,
+          cliente_id: projectData.cliente.id || ''
+        }));
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, projectData.cliente]);
 
   const fetchClientes = async () => {
     setLoadingClientes(true);
     try {
-      const response = await axios.get(
-        'https://geomind-service-production.up.railway.app/api/v1/clientes'
-      );
-      setClientes(response.data);
+      // Verificar se está autenticado
+      if (!authService.isAuthenticated()) {
+        console.error('Usuário não autenticado');
+        setError('Usuário não autenticado');
+        return;
+      }
+      
+      const response = await axios.get(API_ENDPOINTS.clientes.base, {
+        headers: getAuthHeaders()
+      });
+      
+      // Verificar se a resposta tem o formato esperado
+      if (response.data.success) {
+        setClientes(response.data.data || []);
+      } else {
+        setClientes(response.data || []);
+      }
     } catch (err) {
       console.error('Erro ao carregar clientes:', err);
-      setError('Erro ao carregar lista de clientes.');
+      if (err.response?.status === 401) {
+        setError('Sessão expirada. Faça login novamente.');
+      } else {
+        setError('Erro ao carregar lista de clientes.');
+      }
     } finally {
       setLoadingClientes(false);
     }
@@ -48,10 +80,49 @@ const NovoProjeto = ({ isOpen, onClose, onProjetoCreated }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Formatar CEP automaticamente
+    if (name === 'cep_imovel') {
+      const cepFormatado = CepService.formatarCep(value);
+      setFormData(prev => ({
+        ...prev,
+        [name]: cepFormatado
+      }));
+      return;
+    }
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+  
+  const buscarEnderecoPorCep = async () => {
+    if (!formData.cep_imovel || !CepService.validarCep(formData.cep_imovel)) {
+      alert('Por favor, digite um CEP válido');
+      return;
+    }
+    
+    setCepLoading(true);
+    
+    try {
+      const resultado = await CepService.buscarEnderecoPorCep(formData.cep_imovel);
+      
+      if (resultado.success) {
+        setFormData(prev => ({
+          ...prev,
+          endereco_imovel: resultado.data.endereco,
+          cidade_imovel: resultado.data.cidade,
+          estado_imovel: resultado.data.estado
+        }));
+        alert('Endereço encontrado e preenchido automaticamente!');
+      } else {
+        alert(`Erro ao buscar CEP: ${resultado.error}`);
+      }
+    } catch {
+      alert('Erro ao buscar endereço. Tente novamente.');
+    } finally {
+      setCepLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -60,16 +131,28 @@ const NovoProjeto = ({ isOpen, onClose, onProjetoCreated }) => {
     setError('');
 
     try {
+      // Verificar se está autenticado
+      if (!authService.isAuthenticated()) {
+        setError('Usuário não autenticado');
+        return;
+      }
+      
       const response = await axios.post(
-        'https://geomind-service-production.up.railway.app/api/v1/realstate',
-        formData
+        API_ENDPOINTS.projetos.base,
+        formData,
+        {
+          headers: getAuthHeaders()
+        }
       );
+      
+      // Definir projeto ativo no contexto
+      setProject({ ...formData, id: response.data.id });
       
       // Reset form
       setFormData({
         nome: '',
         cliente_id: '',
-        tipo_imovel: 'residencial',
+        tipo_imovel: 'casa',
         endereco_imovel: '',
         cidade_imovel: '',
         estado_imovel: '',
@@ -89,8 +172,12 @@ const NovoProjeto = ({ isOpen, onClose, onProjetoCreated }) => {
       
       onClose();
     } catch (err) {
-      setError('Erro ao criar projeto. Tente novamente.');
       console.error('Erro ao criar projeto:', err);
+      if (err.response?.status === 401) {
+        setError('Sessão expirada. Faça login novamente.');
+      } else {
+        setError('Erro ao criar projeto. Tente novamente.');
+      }
     } finally {
       setLoading(false);
     }
@@ -240,11 +327,21 @@ const NovoProjeto = ({ isOpen, onClose, onProjetoCreated }) => {
               style={styles.select}
               required
             >
-              <option value="residencial">Residencial</option>
-              <option value="comercial">Comercial</option>
-              <option value="industrial">Industrial</option>
-              <option value="rural">Rural</option>
+              <option value="casa">Casa</option>
+              <option value="apartamento">Apartamento</option>
+              <option value="sobrado">Sobrado</option>
+              <option value="kitnet">Kitnet/Studio</option>
+              <option value="cobertura">Cobertura</option>
+              <option value="loja">Loja</option>
+              <option value="sala_comercial">Sala Comercial</option>
+              <option value="galpao">Galpão</option>
+              <option value="escritorio">Escritório</option>
               <option value="terreno">Terreno</option>
+              <option value="chacara">Chácara</option>
+              <option value="fazenda">Fazenda</option>
+              <option value="sitio">Sítio</option>
+              <option value="industrial">Industrial</option>
+              <option value="outros">Outros</option>
             </select>
           </div>
           <div style={styles.formGroup}>
@@ -313,16 +410,38 @@ const NovoProjeto = ({ isOpen, onClose, onProjetoCreated }) => {
           </div>
           <div style={styles.formGroup}>
             <label style={styles.label}>CEP *</label>
-            <input
-              type="text"
-              name="cep_imovel"
-              value={formData.cep_imovel}
-              onChange={handleInputChange}
-              style={styles.input}
-              required
-              onFocus={(e) => e.target.style.borderColor = '#0d9488'}
-              onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-            />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="text"
+                name="cep_imovel"
+                value={formData.cep_imovel}
+                onChange={handleInputChange}
+                style={{ ...styles.input, flex: 1 }}
+                required
+                placeholder="00000-000"
+                maxLength="9"
+                onFocus={(e) => e.target.style.borderColor = '#0d9488'}
+                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+              />
+              <button
+                type="button"
+                onClick={buscarEnderecoPorCep}
+                disabled={cepLoading || !formData.cep_imovel || !CepService.validarCep(formData.cep_imovel)}
+                style={{
+                  ...styles.button,
+                  backgroundColor: cepLoading ? '#9ca3af' : '#0d9488',
+                  color: 'white',
+                  cursor: cepLoading ? 'not-allowed' : 'pointer',
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  minWidth: '80px',
+                  border: 'none',
+                  borderRadius: '8px'
+                }}
+              >
+                {cepLoading ? 'Buscando...' : 'Buscar'}
+              </button>
+            </div>
           </div>
         </div>
 

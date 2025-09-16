@@ -1,0 +1,27 @@
+[
+  {
+    "id": "6958bcb1-5e03-40fe-86fa-88ea95c53d0f",
+    "nome": "marcelo de vasconcelos",
+    "email": "marcelovasconcelos81@gmail.com",
+    "senha": "$2a$10$r176oyO9xNPBizEULX53/O7HwKPsQLi9.Ik9OixroN8VTJYwSsIuS",
+    "telefone": "51999021281",
+    "empresa": "",
+    "plano": "basico",
+    "status": "ativo",
+    "created_at": "2025-09-16T20:44:29.281Z",
+    "updated_at": "2025-09-16T20:44:29.281Z"
+  },
+  {
+    "id": "bc0c13d6-5e22-4d16-97e9-4b64c3ed3b9f",
+    "nome": "Teste Usuario",
+    "email": "teste@teste.com",
+    "senha": "$2a$10$GELasnyDFe7U3dIZ78fFHecXqj9wJMdHNk38u9MdE9YlmsiVFmkXe",
+    "telefone": "11999999999",
+    "empresa": "",
+    "cpfCnpj": "12345678901",
+    "plano": "basico",
+    "status": "ativo",
+    "created_at": "2025-09-16T20:50:22.754Z",
+    "updated_at": "2025-09-16T20:50:22.754Z"
+  }
+]

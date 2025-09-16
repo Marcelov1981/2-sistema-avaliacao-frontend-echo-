@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { addLogoToPDF } from './LogoUtils.jsx';
+import SafariCompatibility from './SafariCompatibility.js';
 
 class PDFGenerator {
   constructor() {
@@ -191,7 +192,7 @@ class PDFGenerator {
     this.initDocument();
     
     // Adicionar logo se configurado
-    await addLogoToPDF(this.doc);
+    await addLogoToPDF(this.doc, this.doc.internal.pageSize.width, this.doc.internal.pageSize.height, 20, true);
     
     // Cabeçalho
     this.addHeader(
@@ -234,7 +235,7 @@ class PDFGenerator {
     this.initDocument();
     
     // Adicionar logo se configurado
-    await addLogoToPDF(this.doc);
+    await addLogoToPDF(this.doc, this.doc.internal.pageSize.width, this.doc.internal.pageSize.height, 20, true);
     
     // Cabeçalho
     this.addHeader(
@@ -282,10 +283,10 @@ class PDFGenerator {
     return this.doc;
   }
 
-  // Salva o PDF
+  // Salva o PDF com compatibilidade para Safari
   save(filename = 'relatorio-analise-imovel.pdf') {
     if (this.doc) {
-      this.doc.save(filename);
+      SafariCompatibility.downloadPDF(this.doc, filename);
     }
   }
 
