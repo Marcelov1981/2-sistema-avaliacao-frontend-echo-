@@ -45,7 +45,7 @@ const ConfiguracaoLogo = ({ isOpen, onClose }) => {
           }
         }
       }
-    } catch (error) {
+    } catch {
       console.log('Carregando configurações do localStorage');
     }
     
