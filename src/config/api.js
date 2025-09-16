@@ -31,6 +31,7 @@ export const API_ENDPOINTS = {
   configuracoes: {
     base: `${API_BASE_URL}/configuracoes`,
     byType: (tipo) => `${API_BASE_URL}/configuracoes/${tipo}`,
+    logo: `${API_BASE_URL}/configuracoes/logo`,
   },
   
   // Usuários

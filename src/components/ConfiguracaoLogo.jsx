@@ -27,7 +27,7 @@ const ConfiguracaoLogo = ({ isOpen, onClose }) => {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        const response = await fetch(`${API_BASE_URL}/api/v1/configuracoes/logo`, {
+        const response = await fetch(`${API_BASE_URL}/configuracoes/logo`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -106,7 +106,7 @@ const ConfiguracaoLogo = ({ isOpen, onClose }) => {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        const response = await fetch(`${API_BASE_URL}/api/v1/configuracoes/logo`, {
+        const response = await fetch(`${API_BASE_URL}/configuracoes/logo`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
