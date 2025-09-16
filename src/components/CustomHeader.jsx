@@ -19,7 +19,8 @@ const CustomHeader = ({ showInReports = false, className = '' }) => {
   const loadLogoConfig = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (token) {
+      // Só faz requisição se estiver autenticado e o backend estiver disponível (não for placeholder)
+      if (token && API_BASE_URL.includes('localhost:3001') && !API_BASE_URL.includes('your-backend-url.com')) {
         const response = await fetch(`${API_BASE_URL}/configuracoes/logo`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -35,8 +36,8 @@ const CustomHeader = ({ showInReports = false, className = '' }) => {
           }
         }
       }
-    } catch {
-      console.log('Carregando configurações do localStorage');
+    } catch (error) {
+      console.log('Erro ao carregar configurações da API, usando localStorage:', error.message);
     }
     
     // Fallback para localStorage
