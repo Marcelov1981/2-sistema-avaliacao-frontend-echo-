@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import jsPDF from 'jspdf';
 import axios from 'axios';
+import { addLogoToPDF } from '../utils/LogoUtils.jsx';
 
 const LaudoPDF = ({ avaliacao, onClose }) => {
   const [laudoData, setLaudoData] = useState({
@@ -35,6 +36,9 @@ const LaudoPDF = ({ avaliacao, onClose }) => {
       const pageWidth = doc.internal.pageSize.width;
       const margin = 20;
       let yPosition = 30;
+
+      // Adicionar logomarca se configurada
+      await addLogoToPDF(doc, pageWidth, doc.internal.pageSize.height, margin);
 
       // Cabeçalho
       doc.setFontSize(20);

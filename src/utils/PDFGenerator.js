@@ -1,4 +1,6 @@
 import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { addLogoToPDF } from './LogoUtils.jsx';
 
 class PDFGenerator {
   constructor() {
@@ -188,6 +190,9 @@ class PDFGenerator {
   async generateAnalysisReport(analysisData) {
     this.initDocument();
     
+    // Adicionar logo se configurado
+    await addLogoToPDF(this.doc);
+    
     // Cabeçalho
     this.addHeader(
       'RELATÓRIO DE ANÁLISE DE IMÓVEL',
@@ -227,6 +232,9 @@ class PDFGenerator {
   // Gera PDF de comparação
   async generateComparisonReport(comparisonData) {
     this.initDocument();
+    
+    // Adicionar logo se configurado
+    await addLogoToPDF(this.doc);
     
     // Cabeçalho
     this.addHeader(
