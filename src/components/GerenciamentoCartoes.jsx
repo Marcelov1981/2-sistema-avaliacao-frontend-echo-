@@ -22,7 +22,7 @@ const GerenciamentoCartoes = ({ onCardSaved, onCardDeleted }) => {
       const token = localStorage.getItem('token');
       if (!token) return;
       
-      const response = await axios.get(`${API_BASE_URL}/api/v1/cartoes`, {
+      const response = await axios.get(`${API_BASE_URL}/cartoes`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -62,14 +62,14 @@ const GerenciamentoCartoes = ({ onCardSaved, onCardDeleted }) => {
       
       let response;
       if (editingCard) {
-        response = await axios.put(`${API_BASE_URL}/api/v1/cartoes/${editingCard.id}`, dadosCartao, {
+        response = await axios.put(`${API_BASE_URL}/cartoes/${editingCard.id}`, dadosCartao, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
       } else {
-        response = await axios.post(`${API_BASE_URL}/api/v1/cartoes`, dadosCartao, {
+        response = await axios.post(`${API_BASE_URL}/cartoes`, dadosCartao, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -116,7 +116,7 @@ const GerenciamentoCartoes = ({ onCardSaved, onCardDeleted }) => {
         return;
       }
       
-      const response = await axios.delete(`${API_BASE_URL}/api/v1/cartoes/${cartaoId}`, {
+      const response = await axios.delete(`${API_BASE_URL}/cartoes/${cartaoId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
