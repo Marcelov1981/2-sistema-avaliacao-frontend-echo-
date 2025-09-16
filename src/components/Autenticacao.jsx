@@ -37,8 +37,14 @@ const Autenticacao = ({ onLogin, onRegister }) => {
         
         message.success('Login realizado com sucesso!');
         
+        console.log('Login bem-sucedido, dados do usuário:', userData);
+        console.log('Callback onLogin disponível:', !!onLogin);
+        
         if (onLogin) {
+          console.log('Executando callback onLogin...');
           onLogin(userData);
+        } else {
+          console.error('Callback onLogin não foi fornecido!');
         }
       } else {
         message.error('Credenciais inválidas.');

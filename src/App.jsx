@@ -57,8 +57,10 @@ const SaaSApp = () => {
   }, []);
 
   const handleLogin = useCallback((userData) => {
+    console.log('handleLogin executado com dados:', userData);
     setUser(userData);
     setIsAuthenticated(true);
+    console.log('Estado de autenticação atualizado para true');
   }, []);
 
   const handleRegister = useCallback((userData) => {
