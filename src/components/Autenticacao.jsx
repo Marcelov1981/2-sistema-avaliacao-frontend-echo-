@@ -16,7 +16,7 @@ const Autenticacao = ({ onLogin, onRegister }) => {
   const handleLogin = async (values) => {
     setLoading(true);
     try {
-      const response = await axios.post(`${API_BASE_URL}/usuarios/login`, {
+      const response = await axios.post(`${API_BASE_URL}/api/v1/usuarios/login`, {
         email: values.email,
         senha: values.password
       });
@@ -61,16 +61,20 @@ const Autenticacao = ({ onLogin, onRegister }) => {
   };
 
   const handleRegister = async (values) => {
+    console.log('handleRegister chamado com valores:', values);
     setLoading(true);
     try {
-      const response = await axios.post(`${API_BASE_URL}/usuarios/registro`, {
+      const dadosEnvio = {
         nome: values.nome,
         email: values.email,
         senha: values.password,
         telefone: values.telefone,
         cpfCnpj: values.cpfCnpj,
         empresa: values.empresa || ''
-      });
+      };
+      console.log('Dados que serão enviados:', dadosEnvio);
+      
+      const response = await axios.post(`${API_BASE_URL}/api/v1/usuarios/registro`, dadosEnvio);
       
       if (response.data && response.data.success) {
         const userData = {
@@ -91,8 +95,14 @@ const Autenticacao = ({ onLogin, onRegister }) => {
         
         message.success('Cadastro realizado com sucesso!');
         
+        console.log('Registro bem-sucedido, dados do usuário:', userData);
+        console.log('Callback onRegister disponível:', !!onRegister);
+        
         if (onRegister) {
+          console.log('Executando callback onRegister...');
           onRegister(userData);
+        } else {
+          console.error('Callback onRegister não foi fornecido!');
         }
       } else {
         message.error(response.data?.message || 'Erro ao realizar cadastro.');

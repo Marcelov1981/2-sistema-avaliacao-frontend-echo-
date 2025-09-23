@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
+import process from 'process';
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -13,7 +14,7 @@ const __dirname = path.dirname(__filename);
 
 // Caminho para o arquivo de usuários
 const USERS_FILE = path.join(__dirname, '../data/usuarios.json');
-const JWT_SECRET = 'sua-chave-secreta-aqui';
+const JWT_SECRET = process.env.JWT_SECRET || 'sua-chave-secreta-aqui';
 
 // Função para garantir que o diretório de dados existe
 const ensureDataDir = async () => {

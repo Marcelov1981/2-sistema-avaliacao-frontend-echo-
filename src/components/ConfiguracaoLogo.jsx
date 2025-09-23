@@ -28,7 +28,7 @@ const ConfiguracaoLogo = ({ isOpen, onClose }) => {
       const token = localStorage.getItem('token');
       // Só faz requisição se estiver autenticado e o backend estiver disponível (não for placeholder)
       if (token && API_BASE_URL.includes('localhost:3001') && !API_BASE_URL.includes('your-backend-url.com')) {
-        const response = await fetch(`${API_BASE_URL}/configuracoes/logo`, {
+        const response = await fetch(`${API_BASE_URL}/api/v1/configuracoes/logo`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -108,7 +108,7 @@ const ConfiguracaoLogo = ({ isOpen, onClose }) => {
       const token = localStorage.getItem('token');
       // Só faz requisição se estiver autenticado e o backend estiver disponível (não for placeholder)
       if (token && API_BASE_URL.includes('localhost:3001') && !API_BASE_URL.includes('your-backend-url.com')) {
-        const response = await fetch(`${API_BASE_URL}/configuracoes/logo`, {
+        const response = await fetch(`${API_BASE_URL}/api/v1/configuracoes/logo`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

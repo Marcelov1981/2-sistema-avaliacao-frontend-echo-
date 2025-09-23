@@ -3,9 +3,10 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import jwt from 'jsonwebtoken';
+import process from 'process';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'sua_chave_secreta_jwt';
+const JWT_SECRET = process.env.JWT_SECRET || 'sua-chave-secreta-aqui';
 
 // Configuração do ES modules
 const __filename = fileURLToPath(import.meta.url);

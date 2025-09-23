@@ -1,8 +1,8 @@
 // Configurações da API
 
 // Configuração base da API usando variáveis de ambiente
-const API_BASE_URL_DEV = 'http://localhost:3001/api/v1';
-const API_BASE_URL_PROD = import.meta.env.VITE_API_BASE_URL || 'https://your-backend-url.com/api/v1';
+const API_BASE_URL_DEV = 'http://localhost:3001';
+const API_BASE_URL_PROD = import.meta.env.VITE_API_BASE_URL || 'https://your-backend-url.com';
 
 // Configuração para desenvolvimento
 const DEV_CONFIG = {
@@ -29,19 +29,19 @@ export { API_BASE_URL_EXPORT as API_BASE_URL };
 export const API_ENDPOINTS = {
   // Configurações
   configuracoes: {
-    base: `${API_BASE_URL}/configuracoes`,
-    byType: (tipo) => `${API_BASE_URL}/configuracoes/${tipo}`,
-    logo: `${API_BASE_URL}/configuracoes/logo`,
+    base: `${API_BASE_URL}/api/v1/configuracoes`,
+    geral: `${API_BASE_URL}/api/v1/configuracoes/geral`,
+    logo: `${API_BASE_URL}/api/v1/configuracoes/logo`,
   },
-  
+
   // Usuários
   usuarios: {
-    base: `${API_BASE_URL}/usuarios`,
-    register: `${API_BASE_URL}/usuarios/register`,
-    login: `${API_BASE_URL}/usuarios/login`,
-    profile: `${API_BASE_URL}/usuarios/profile`,
-    updatePassword: `${API_BASE_URL}/usuarios/update-password`,
-    list: `${API_BASE_URL}/usuarios/list`,
+    base: `${API_BASE_URL}/api/v1/usuarios`,
+    register: `${API_BASE_URL}/api/v1/usuarios/register`,
+    login: `${API_BASE_URL}/api/v1/usuarios/login`,
+    profile: `${API_BASE_URL}/api/v1/usuarios/profile`,
+    updatePassword: `${API_BASE_URL}/api/v1/usuarios/update-password`,
+    list: `${API_BASE_URL}/api/v1/usuarios/list`,
   },
   
   // Backup

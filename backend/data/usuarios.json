@@ -23,5 +23,31 @@
     "status": "ativo",
     "created_at": "2025-09-16T20:50:22.754Z",
     "updated_at": "2025-09-16T20:50:22.754Z"
+  },
+  {
+    "id": "92bcf4b4-0b52-4173-ab6b-b2df35b88798",
+    "nome": "Teste Novo",
+    "email": "teste.novo@teste.com",
+    "senha": "$2a$10$Nx82IdyF6INvHRMBh.DyjOQEtzafZYhLlEua9tHgt9AEN7vZMRetC",
+    "telefone": "11999999999",
+    "empresa": "Teste Empresa",
+    "cpfCnpj": "12345678901",
+    "plano": "basico",
+    "status": "ativo",
+    "created_at": "2025-09-17T00:05:06.331Z",
+    "updated_at": "2025-09-17T00:05:06.331Z"
+  },
+  {
+    "id": "49bb2c8f-98bc-45ee-b454-cd89662410bd",
+    "nome": "João Silva",
+    "email": "joao.silva@teste.com",
+    "senha": "$2a$10$R3TxpOnyivOQaK8y1oirnek.lweTDdWJg7f3AQ10XXXiPvJUd4/W.",
+    "telefone": "(11) 99999-9999",
+    "empresa": "Empresa Teste",
+    "cpfCnpj": "12345678901",
+    "plano": "basico",
+    "status": "ativo",
+    "created_at": "2025-09-17T00:09:00.593Z",
+    "updated_at": "2025-09-17T00:09:00.593Z"
   }
 ]

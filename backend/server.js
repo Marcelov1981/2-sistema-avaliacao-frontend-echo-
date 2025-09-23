@@ -50,6 +50,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Rotas da API
+// IMPORTANTE: Rotas mais específicas devem vir ANTES das mais genéricas
+app.use('/api/v1/configuracoes/logo', logoRoutes);
 app.use('/api/v1/configuracoes', configuracoesRoutes);
 app.use('/api/v1/usuarios', usuariosRoutes);
 app.use('/api/v1/backup', backupRoutes);
@@ -59,7 +61,6 @@ app.use('/api/v1/laudos', laudosRoutes);
 app.use('/api/v1/clientes', clientesRoutes);
 app.use('/api/v1/projetos', projetosRoutes);
 app.use('/api/v1/avaliacoes', avaliacoesRoutes);
-app.use('/api/v1/configuracoes/logo', logoRoutes);
 
 // Rota de health check
 app.get('/health', (req, res) => {
