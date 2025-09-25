@@ -1,0 +1,21 @@
+[
+  {
+    "id": "1758187932531",
+    "nome": "joao silva",
+    "email": "joaosilva@mail.com",
+    "telefone": "1189022290",
+    "documento": "71134589211",
+    "tipo_pessoa": "fisica",
+    "endereco": "Rua Osvaldo Moura Nascimento",
+    "cidade": "Porto Alegre",
+    "estado": "RS",
+    "cep": "91130-180",
+    "registroProfissional": "",
+    "tipoRegistro": "OUTRO",
+    "observacoes": "",
+    "status": "ativo",
+    "usuario_id": "6958bcb1-5e03-40fe-86fa-88ea95c53d0f",
+    "createdAt": "2025-09-18T09:32:12.532Z",
+    "updatedAt": "2025-09-18T09:32:12.532Z"
+  }
+]

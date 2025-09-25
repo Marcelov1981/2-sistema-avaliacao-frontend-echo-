@@ -1,16 +1,23 @@
 // Utilitários para gerenciamento de logomarca nos relatórios
 import { API_BASE_URL } from '../config/api';
+import logoCache from './logoCache';
 
 /**
  * Obtém as configurações da logomarca do backend ou localStorage
  * @returns {Promise<Object>} Configurações da logo
  */
 export const getLogoConfig = async () => {
+  // Verificar cache primeiro
+  const cachedData = logoCache.get();
+  if (cachedData) {
+    return cachedData;
+  }
+
   try {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('saas_auth_token');
     // Só faz requisição se estiver autenticado e o backend estiver disponível (não for placeholder)
     if (token && API_BASE_URL.includes('localhost:3001') && !API_BASE_URL.includes('your-backend-url.com')) {
-      const response = await fetch(`${API_BASE_URL}/api/v1/configuracoes/logo`, {
+      const response = await fetch(`${API_BASE_URL}/configuracoes/logo`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -19,6 +26,8 @@ export const getLogoConfig = async () => {
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
+          // Salvar no cache
+          logoCache.set(data.data);
           return data.data;
         }
       }
@@ -28,7 +37,7 @@ export const getLogoConfig = async () => {
    }
   
   // Fallback para localStorage
-  return {
+  const fallbackConfig = {
     logoUrl: localStorage.getItem('logoUrl') || '',
     logoSize: parseInt(localStorage.getItem('logoSize')) || 100,
     logoPosition: localStorage.getItem('logoPosition') || 'top-right',
@@ -36,6 +45,17 @@ export const getLogoConfig = async () => {
     showInPages: localStorage.getItem('showInPages') !== 'false',
     showInReports: localStorage.getItem('showInReports') !== 'false'
   };
+  
+  // Salvar fallback no cache também
+  logoCache.set(fallbackConfig);
+  return fallbackConfig;
+};
+
+/**
+ * Invalida o cache de logo (usar após salvar configurações)
+ */
+export const invalidateLogoCache = () => {
+  logoCache.invalidate();
 };
 
 /**

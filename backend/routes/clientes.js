@@ -74,7 +74,7 @@ router.get('/', authenticateToken, (req, res) => {
   try {
     const clientes = readData();
     // Filtrar clientes do usuário logado
-    const clientesUsuario = clientes.filter(c => c.usuarioId === req.user.id);
+    const clientesUsuario = clientes.filter(c => c.usuario_id === req.user.id);
     res.json({
       success: true,
       data: clientesUsuario
@@ -92,7 +92,7 @@ router.get('/', authenticateToken, (req, res) => {
 router.get('/:id', authenticateToken, (req, res) => {
   try {
     const clientes = readData();
-    const cliente = clientes.find(c => c.id === req.params.id && c.usuarioId === req.user.id);
+    const cliente = clientes.find(c => c.id === req.params.id && c.usuario_id === req.user.id);
     
     if (!cliente) {
       return res.status(404).json({ 
@@ -121,7 +121,7 @@ router.post('/', authenticateToken, (req, res) => {
     const novoCliente = {
       id: Date.now().toString(),
       ...req.body,
-      usuarioId: req.user.id, // Associar ao usuário logado
+      usuario_id: req.user.id, // Associar ao usuário logado
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -153,7 +153,7 @@ router.post('/', authenticateToken, (req, res) => {
 router.put('/:id', authenticateToken, (req, res) => {
   try {
     const clientes = readData();
-    const index = clientes.findIndex(c => c.id === req.params.id && c.usuarioId === req.user.id);
+    const index = clientes.findIndex(c => c.id === req.params.id && c.usuario_id === req.user.id);
     
     if (index === -1) {
       return res.status(404).json({ 
@@ -165,7 +165,7 @@ router.put('/:id', authenticateToken, (req, res) => {
     clientes[index] = {
       ...clientes[index],
       ...req.body,
-      usuarioId: req.user.id, // Manter associação ao usuário
+      usuario_id: req.user.id, // Manter associação ao usuário
       updatedAt: new Date().toISOString()
     };
     
@@ -194,7 +194,7 @@ router.put('/:id', authenticateToken, (req, res) => {
 router.delete('/:id', authenticateToken, (req, res) => {
   try {
     const clientes = readData();
-    const index = clientes.findIndex(c => c.id === req.params.id && c.usuarioId === req.user.id);
+    const index = clientes.findIndex(c => c.id === req.params.id && c.usuario_id === req.user.id);
     
     if (index === -1) {
       return res.status(404).json({ 

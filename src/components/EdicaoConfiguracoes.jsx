@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Modal, Form, Input, Select, Switch, Button, Card, Row, Col, Upload, message, ColorPicker, Slider } from 'antd';
 import { UploadOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
 import configuracoesService from '../services/configuracoesService.js';
@@ -11,13 +11,7 @@ const EdicaoConfiguracoes = ({ isOpen, onClose, tipoConfiguracao }) => {
   const [loading, setLoading] = useState(false);
   const [configuracoes, setConfiguracoes] = useState({});
 
-  useEffect(() => {
-    if (isOpen && tipoConfiguracao) {
-      carregarConfiguracoes();
-    }
-  }, [isOpen, tipoConfiguracao]);
-
-  const carregarConfiguracoes = async () => {
+  const carregarConfiguracoes = useCallback(async () => {
     setLoading(true);
     try {
       // Tentar carregar do backend primeiro
@@ -48,7 +42,13 @@ const EdicaoConfiguracoes = ({ isOpen, onClose, tipoConfiguracao }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tipoConfiguracao, form]);
+
+  useEffect(() => {
+    if (isOpen && tipoConfiguracao) {
+      carregarConfiguracoes();
+    }
+  }, [isOpen, tipoConfiguracao, carregarConfiguracoes]);
 
   const obterConfiguracaoPadrao = (tipo) => {
     const padroes = {

@@ -19,7 +19,7 @@ const GerenciamentoCartoes = ({ onCardSaved, onCardDeleted }) => {
 
   const carregarCartoes = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('saas_auth_token');
       if (!token) return;
       
       const response = await axios.get(`${API_BASE_URL}/cartoes`, {
@@ -46,7 +46,7 @@ const GerenciamentoCartoes = ({ onCardSaved, onCardDeleted }) => {
   const handleSaveCard = async (values) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('saas_auth_token');
       if (!token) {
         message.error('Usuário não autenticado.');
         return;
@@ -110,7 +110,7 @@ const GerenciamentoCartoes = ({ onCardSaved, onCardDeleted }) => {
 
   const handleDeleteCard = async (cartaoId) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('saas_auth_token');
       if (!token) {
         message.error('Usuário não autenticado.');
         return;
@@ -254,7 +254,7 @@ const GerenciamentoCartoes = ({ onCardSaved, onCardDeleted }) => {
                   color: 'white',
                   border: 'none'
                 }}
-                bodyStyle={{ padding: '20px' }}
+                styles={{ body: { padding: '20px' } }}
                 actions={[
                   <Button
                     type="text"

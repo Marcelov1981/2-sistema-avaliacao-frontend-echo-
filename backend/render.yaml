@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: sistema-avaliacao-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: 10000
+      - key: MAX_FILE_SIZE
+        value: 10mb
+      - key: UPLOAD_DIR
+        value: ./uploads
+      - key: BACKUP_DIR
+        value: ./backups
+      - key: BACKUP_RETENTION_DAYS
+        value: 30
+      - key: AUTO_BACKUP_ENABLED
+        value: true
+      - key: AUTO_BACKUP_FREQUENCY
+        value: daily

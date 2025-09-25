@@ -58,7 +58,7 @@ const AccessDeniedCard = ({
           textAlign: 'center',
           boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
         }}
-        bodyStyle={{ padding: '40px' }}
+        styles={{ body: { padding: '40px' } }}
       >
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <div>

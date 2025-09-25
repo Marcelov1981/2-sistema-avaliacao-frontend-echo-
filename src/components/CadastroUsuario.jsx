@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { API_ENDPOINTS } from '../config/api';
 import axios from 'axios';
+import CepService from '../utils/CepService';
 
 const CadastroUsuario = ({ onNavigateToPlanos }) => {
   const [tipoUsuario, setTipoUsuario] = useState('pessoa_fisica'); // pessoa_fisica ou pessoa_juridica
@@ -33,6 +34,12 @@ const CadastroUsuario = ({ onNavigateToPlanos }) => {
     senha: '',
     confirmarSenha: '',
     
+    // Configurações corporativas (apenas para CNPJ)
+    precisaSubacessos: false,
+    numeroColaboradores: 1,
+    nomeResponsavel: '',
+    cargoResponsavel: '',
+    
     // Termos
     aceitaTermos: false,
     aceitaPrivacidade: false
@@ -40,29 +47,46 @@ const CadastroUsuario = ({ onNavigateToPlanos }) => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    
+    // Formatar CEP automaticamente
+    if (name === 'cep') {
+      const cepFormatado = CepService.formatarCep(value);
+      setFormData(prev => ({
+        ...prev,
+        [name]: cepFormatado
+      }));
+      
+      // Buscar endereço automaticamente quando CEP estiver completo
+      const cepLimpo = CepService.limparCep(cepFormatado);
+      if (cepLimpo.length === 8 && CepService.validarCep(cepLimpo)) {
+        buscarEnderecoPorCep(cepLimpo);
+      }
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
   };
 
-  const buscarCep = async (cep) => {
-    if (cep.length === 8) {
-      try {
-        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-        const data = await response.json();
-        if (!data.erro) {
-          setFormData(prev => ({
-            ...prev,
-            endereco: data.logradouro,
-            bairro: data.bairro,
-            cidade: data.localidade,
-            estado: data.uf
-          }));
-        }
-      } catch (error) {
-        console.error('Erro ao buscar CEP:', error);
+  const buscarEnderecoPorCep = async (cep) => {
+    try {
+      const resultado = await CepService.buscarEnderecoPorCep(cep);
+      
+      if (resultado.success) {
+        setFormData(prev => ({
+          ...prev,
+          endereco: resultado.data.endereco,
+          bairro: resultado.data.bairro,
+          cidade: resultado.data.cidade,
+          estado: resultado.data.estado
+        }));
+      } else {
+        console.error('Erro ao buscar CEP:', resultado.error);
       }
+    } catch (error) {
+      console.error('Erro ao buscar endereço:', error);
     }
   };
 
@@ -79,6 +103,16 @@ const CadastroUsuario = ({ onNavigateToPlanos }) => {
     
     if (tipoUsuario === 'pessoa_juridica' && (!formData.cnpj || !formData.razaoSocial)) {
       setError('CNPJ e Razão Social são obrigatórios para pessoa jurídica');
+      return false;
+    }
+    
+    if (tipoUsuario === 'pessoa_juridica' && !formData.nomeResponsavel) {
+      setError('Nome do responsável é obrigatório para pessoa jurídica');
+      return false;
+    }
+    
+    if (tipoUsuario === 'pessoa_juridica' && formData.precisaSubacessos && formData.numeroColaboradores < 1) {
+      setError('Número de colaboradores deve ser pelo menos 1');
       return false;
     }
     
@@ -195,7 +229,22 @@ const CadastroUsuario = ({ onNavigateToPlanos }) => {
     },
     checkbox: {
       width: '18px',
-      height: '18px'
+      height: '18px',
+      marginRight: '8px'
+    },
+    checkboxLabel: {
+      display: 'flex',
+      alignItems: 'center',
+      fontWeight: '600',
+      color: '#374151',
+      cursor: 'pointer',
+      marginBottom: '8px'
+    },
+    helpText: {
+      fontSize: '14px',
+      color: '#6b7280',
+      marginTop: '5px',
+      lineHeight: '1.4'
     },
     submitButton: {
       width: '100%',
@@ -257,7 +306,11 @@ const CadastroUsuario = ({ onNavigateToPlanos }) => {
             style={styles.submitButton}
             onClick={() => {
               if (onNavigateToPlanos) {
-                onNavigateToPlanos();
+                // Passar número de colaboradores para planos corporativos
+                const dadosNavegacao = tipoUsuario === 'pessoa_juridica' && formData.precisaSubacessos 
+                  ? { numeroColaboradores: formData.numeroColaboradores }
+                  : {};
+                onNavigateToPlanos(dadosNavegacao);
               } else {
                 window.location.reload();
               }
@@ -385,6 +438,77 @@ const CadastroUsuario = ({ onNavigateToPlanos }) => {
             )}
           </div>
 
+          {tipoUsuario === 'pessoa_juridica' && (
+            <>
+              <h3 style={styles.sectionTitle}>Configurações Corporativas</h3>
+              
+              <div style={styles.formGrid}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Nome do Responsável *</label>
+                  <input
+                    type="text"
+                    name="nomeResponsavel"
+                    value={formData.nomeResponsavel}
+                    onChange={handleInputChange}
+                    style={styles.input}
+                    placeholder="Nome completo do responsável pela conta"
+                    required
+                  />
+                </div>
+
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Cargo do Responsável</label>
+                  <input
+                    type="text"
+                    name="cargoResponsavel"
+                    value={formData.cargoResponsavel}
+                    onChange={handleInputChange}
+                    style={styles.input}
+                    placeholder="Ex: Diretor, Gerente, Sócio"
+                  />
+                </div>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    name="precisaSubacessos"
+                    checked={formData.precisaSubacessos}
+                    onChange={handleInputChange}
+                    style={styles.checkbox}
+                  />
+                  Preciso de subacessos para colaboradores
+                </label>
+                <p style={styles.helpText}>
+                  Marque esta opção se você precisar dar acesso ao sistema para outros colaboradores da sua empresa.
+                </p>
+              </div>
+
+              {formData.precisaSubacessos && (
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Número de Colaboradores (máximo 20) *</label>
+                  <select
+                    name="numeroColaboradores"
+                    value={formData.numeroColaboradores}
+                    onChange={handleInputChange}
+                    style={styles.input}
+                    required
+                  >
+                    {Array.from({ length: 20 }, (_, i) => i + 1).map(num => (
+                      <option key={num} value={num}>
+                        {num} {num === 1 ? 'colaborador' : 'colaboradores'}
+                      </option>
+                    ))}
+                  </select>
+                  <p style={styles.helpText}>
+                    O valor da assinatura será calculado baseado no número de colaboradores selecionado.
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+
           <h3 style={styles.sectionTitle}>Endereço</h3>
           
           <div style={styles.formGrid}>
@@ -394,14 +518,10 @@ const CadastroUsuario = ({ onNavigateToPlanos }) => {
                 type="text"
                 name="cep"
                 value={formData.cep}
-                onChange={(e) => {
-                  handleInputChange(e);
-                  if (e.target.value.length === 8) {
-                    buscarCep(e.target.value);
-                  }
-                }}
+                onChange={handleInputChange}
                 style={styles.input}
-                maxLength="8"
+                maxLength="9"
+                placeholder="12345-678"
               />
             </div>
 

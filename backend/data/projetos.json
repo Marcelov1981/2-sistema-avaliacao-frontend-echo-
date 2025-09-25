@@ -1,0 +1,23 @@
+[
+  {
+    "id": "1758188097812",
+    "nome": "Avaliação residencial",
+    "cliente_id": "1758187932531",
+    "usuario_id": "6958bcb1-5e03-40fe-86fa-88ea95c53d0f",
+    "tipo_imovel": "casa",
+    "endereco_imovel": "Rua Europa",
+    "cidade_imovel": "Canoas",
+    "estado_imovel": "RS",
+    "cep_imovel": "92010-180",
+    "area_terreno": "300",
+    "area_construida": "147",
+    "valor_estimado": 450000,
+    "finalidade_avaliacao": "aluguel",
+    "prazo_entrega": "2025-09-18",
+    "status": "em_andamento",
+    "observacoes": "Verificar o valor de locação em imóveis similares na região",
+    "imagens": [],
+    "createdAt": "2025-09-18T09:34:57.812Z",
+    "updatedAt": "2025-09-18T09:34:57.812Z"
+  }
+]

@@ -15,5 +15,515 @@
     "timestamp": "2025-09-16T21:00:25.534Z",
     "ip": "::1",
     "userAgent": "curl/8.7.1"
+  },
+  {
+    "id": "1758188863866",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T09:47:43.866Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15"
+  },
+  {
+    "id": "1758189199299",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T09:53:19.299Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15"
+  },
+  {
+    "id": "1758189645969",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T10:00:45.969Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15"
+  },
+  {
+    "id": "1758190028370",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T10:07:08.370Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15"
+  },
+  {
+    "id": "1758190402964",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T10:13:22.965Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15"
+  },
+  {
+    "id": "1758191616422",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T10:33:36.422Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15"
+  },
+  {
+    "id": "1758193146477",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T10:59:06.477Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15"
+  },
+  {
+    "id": "1758193411674",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T11:03:31.674Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15"
+  },
+  {
+    "id": "1758194097127",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T11:14:57.129Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15"
+  },
+  {
+    "id": "1758194406763",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T11:20:06.763Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15"
+  },
+  {
+    "id": "1758194808448",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T11:26:48.448Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15"
+  },
+  {
+    "id": "1758195342601",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T11:35:42.601Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36"
+  },
+  {
+    "id": "1758218428421",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T18:00:28.421Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36"
+  },
+  {
+    "id": "1758219555423",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T18:19:15.423Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15"
+  },
+  {
+    "id": "1758219960248",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T18:26:00.249Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36"
+  },
+  {
+    "id": "1758219960253",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T18:26:00.253Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36"
+  },
+  {
+    "id": "1758219961975",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T18:26:01.975Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36"
+  },
+  {
+    "id": "1758219961978",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T18:26:01.979Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36"
+  },
+  {
+    "id": "1758219961989",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "avaliacoes",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36",
+      "method": "GET",
+      "url": "/api/v1/avaliacoes",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T18:26:01.989Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36"
+  },
+  {
+    "id": "1758219961993",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "avaliacoes",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36",
+      "method": "GET",
+      "url": "/api/v1/avaliacoes",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T18:26:01.993Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36"
+  },
+  {
+    "id": "1758219990392",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T18:26:30.392Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36"
+  },
+  {
+    "id": "1758219990393",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T18:26:30.393Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36"
+  },
+  {
+    "id": "1758219990395",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "avaliacoes",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36",
+      "method": "GET",
+      "url": "/api/v1/avaliacoes",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T18:26:30.395Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36"
+  },
+  {
+    "id": "1758219990406",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "avaliacoes",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36",
+      "method": "GET",
+      "url": "/api/v1/avaliacoes",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T18:26:30.406Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36"
+  },
+  {
+    "id": "1758219996241",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T18:26:36.241Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36"
+  },
+  {
+    "id": "1758219996244",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T18:26:36.244Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36"
+  },
+  {
+    "id": "1758220034665",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T18:27:14.665Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15"
+  },
+  {
+    "id": "1758220488765",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T18:34:48.765Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15"
+  },
+  {
+    "id": "1758220488770",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "avaliacoes",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "method": "GET",
+      "url": "/api/v1/avaliacoes",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T18:34:48.770Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15"
+  },
+  {
+    "id": "1758220488780",
+    "userId": "anonymous",
+    "action": "READ",
+    "resource": "orcamentos",
+    "resourceId": null,
+    "details": {
+      "ip": "::1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "method": "GET",
+      "url": "/api/v1/orcamentos",
+      "statusCode": 200
+    },
+    "timestamp": "2025-09-18T18:34:48.780Z",
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15"
   }
 ]

@@ -1,12 +1,40 @@
-import React, { useState } from 'react';
-import { API_ENDPOINTS } from '../config/api';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
 
-const PlanosAssinatura = ({ onNavigate, onPlanoSelecionado }) => {
-  const [planoSelecionado, setPlanoSelecionado] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [processando, setProcessando] = useState(false);
+const PlanosAssinatura = ({ onNavigate, numeroColaboradores = 1 }) => {
+  const [planosAtualizados, setPlanosAtualizados] = useState([]);
+  
+  // Configuração de preços por colaborador adicional
+  const precoColaboradorAdicional = {
+    corporativo_basico: 15.90,
+    corporativo_medio: 12.90,
+    corporativo_avancado: 9.90
+  };
+  
+  // Função para calcular preço dinâmico baseado no número de colaboradores
+  const calcularPrecoColaboradores = (plano, numColaboradores) => {
+    if (plano.tipo !== 'corporativo') return plano;
+    
+    const colaboradoresExtras = Math.max(0, numColaboradores - plano.maxColaboradores);
+    const custoAdicional = colaboradoresExtras * precoColaboradorAdicional[plano.id];
+    const novoValor = plano.valor + custoAdicional;
+    
+    return {
+      ...plano,
+      preco: `R$ ${novoValor.toFixed(2).replace('.', ',')}`,
+      valor: novoValor,
+      colaboradoresExtras,
+      custoAdicional,
+      descricao: colaboradoresExtras > 0 
+        ? `${plano.descricao} + ${colaboradoresExtras} colaborador(es) adicional(is)`
+        : plano.descricao,
+      recursos: colaboradoresExtras > 0
+        ? [
+            `Até ${numColaboradores} subacessos inclusos`,
+            ...plano.recursos.slice(1)
+          ]
+        : plano.recursos
+    };
+  };
 
   const planos = [
     {
@@ -91,51 +119,102 @@ const PlanosAssinatura = ({ onNavigate, onPlanoSelecionado }) => {
       ],
       cor: '#f59e0b',
       popular: false
+    },
+    {
+      id: 'corporativo_basico',
+      nome: 'Corporativo Básico',
+      preco: 'R$ 199,90',
+      periodo: '/mês',
+      valor: 199.90,
+      valorOriginal: 299.90,
+      desconto: 33,
+      duracao: '1 mês',
+      descricao: 'Para empresas com até 5 colaboradores',
+      recursos: [
+        'Até 5 subacessos inclusos',
+        'Análises ilimitadas por usuário',
+        'Relatórios corporativos',
+        'Gestão centralizada de usuários',
+        'Suporte prioritário',
+        'Dashboard administrativo'
+      ],
+      cor: '#dc2626',
+      popular: false,
+      tipo: 'corporativo',
+      maxColaboradores: 5
+    },
+    {
+      id: 'corporativo_medio',
+      nome: 'Corporativo Médio',
+      preco: 'R$ 349,90',
+      periodo: '/mês',
+      valor: 349.90,
+      valorOriginal: 499.90,
+      desconto: 30,
+      duracao: '1 mês',
+      descricao: 'Para empresas com até 15 colaboradores',
+      recursos: [
+        'Até 15 subacessos inclusos',
+        'Análises ilimitadas por usuário',
+        'Relatórios corporativos avançados',
+        'Gestão centralizada de usuários',
+        'Suporte dedicado 24/7',
+        'Dashboard administrativo',
+        'API corporativa',
+        'Integração com sistemas externos'
+      ],
+      cor: '#dc2626',
+      popular: true,
+      tipo: 'corporativo',
+      maxColaboradores: 15
+    },
+    {
+      id: 'corporativo_avancado',
+      nome: 'Corporativo Avançado',
+      preco: 'R$ 499,90',
+      periodo: '/mês',
+      valor: 499.90,
+      valorOriginal: 699.90,
+      desconto: 29,
+      duracao: '1 mês',
+      descricao: 'Para empresas com até 20 colaboradores',
+      recursos: [
+        'Até 20 subacessos inclusos',
+        'Análises ilimitadas por usuário',
+        'Relatórios corporativos personalizados',
+        'Gestão avançada de usuários e permissões',
+        'Suporte dedicado premium',
+        'Dashboard administrativo avançado',
+        'API corporativa completa',
+        'Integração com sistemas externos',
+        'Consultoria especializada',
+        'Treinamento da equipe'
+      ],
+      cor: '#dc2626',
+      popular: false,
+      tipo: 'corporativo',
+      maxColaboradores: 20
     }
   ];
 
-  const handleSelecionarPlano = (plano) => {
-    setPlanoSelecionado(plano);
-    setError('');
-  };
+  // Atualizar planos quando o número de colaboradores mudar
+  useEffect(() => {
+    const planosCalculados = planos.map(plano => 
+      calcularPrecoColaboradores(plano, numeroColaboradores)
+    );
+    setPlanosAtualizados(planosCalculados);
+  }, [numeroColaboradores, planos, calcularPrecoColaboradores]);
 
-  const handleConfirmarPlano = async () => {
-    if (!planoSelecionado) return;
-    
-    setProcessando(true);
-    setError('');
-    
-    try {
-      setLoading(true);
-      // Salvar seleção do plano
-      await axios.post(`${API_ENDPOINTS.usuarios.base}/plano-selecionado`, {
-        planoId: planoSelecionado.id,
-        valor: planoSelecionado.valor,
-        periodo: planoSelecionado.duracao
-      });
-      
-      // Chamar callback para redirecionar para pagamento
-      if (onPlanoSelecionado) {
-        onPlanoSelecionado(planoSelecionado);
-      } else if (onNavigate) {
-        onNavigate('pagamento', { plano: planoSelecionado });
-      }
-      
-    } catch (error) {
-      console.error('Erro ao selecionar plano:', error);
-      setError(error.response?.data?.message || 'Erro ao selecionar plano');
-    } finally {
-      setLoading(false);
-      setProcessando(false);
+  const handleSelecionarPlano = (plano) => {
+    // Navegar para página de pagamento
+    if (onNavigate) {
+      onNavigate('pagamento', { plano });
     }
   };
 
-  const formatarValor = (valor) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(valor);
-  };
+
+
+
 
   const handleEscolherPlano = (plano) => {
     handleSelecionarPlano(plano);
@@ -169,6 +248,25 @@ const PlanosAssinatura = ({ onNavigate, onPlanoSelecionado }) => {
       maxWidth: '600px',
       margin: '0 auto',
       lineHeight: '1.6'
+    },
+    sectionHeader: {
+      textAlign: 'center',
+      marginBottom: '40px',
+      marginTop: '80px',
+      color: 'white'
+    },
+    sectionTitle: {
+      fontSize: '2.5rem',
+      fontWeight: '700',
+      marginBottom: '12px',
+      textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+    },
+    sectionSubtitle: {
+      fontSize: '1.1rem',
+      opacity: '0.9',
+      maxWidth: '500px',
+      margin: '0 auto',
+      lineHeight: '1.5'
     },
     planosGrid: {
       display: 'grid',
@@ -332,8 +430,14 @@ const PlanosAssinatura = ({ onNavigate, onPlanoSelecionado }) => {
           </p>
         </div>
 
+        {/* Planos Individuais */}
+        <div style={styles.sectionHeader}>
+          <h2 style={styles.sectionTitle}>Planos Individuais</h2>
+          <p style={styles.sectionSubtitle}>Para profissionais e pequenos projetos</p>
+        </div>
+        
         <div style={styles.planosGrid}>
-          {planos.map((plano) => (
+          {(planosAtualizados.length > 0 ? planosAtualizados : planos).filter(plano => !plano.tipo || plano.tipo !== 'corporativo').map((plano) => (
             <div
               key={plano.id}
               style={{
@@ -384,6 +488,101 @@ const PlanosAssinatura = ({ onNavigate, onPlanoSelecionado }) => {
                 style={{
                   ...styles.botaoEscolher,
                   background: plano.cor
+                }}
+                onClick={() => handleEscolherPlano(plano)}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = `0 8px 25px ${plano.cor}40`;
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = 'none';
+                }}
+              >
+                Escolher {plano.nome}
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Planos Corporativos */}
+        <div style={styles.sectionHeader}>
+          <h2 style={styles.sectionTitle}>Planos Corporativos</h2>
+          <p style={styles.sectionSubtitle}>Para empresas com múltiplos colaboradores</p>
+          {numeroColaboradores > 1 && (
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              padding: '20px',
+              marginTop: '20px',
+              maxWidth: '600px',
+              margin: '20px auto 0'
+            }}>
+              <p style={{
+                color: 'white',
+                fontSize: '1rem',
+                margin: 0,
+                lineHeight: '1.5'
+              }}>
+                💡 <strong>Preços ajustados para {numeroColaboradores} colaboradores</strong><br/>
+                Colaboradores extras são cobrados por: Básico (+R$ 15,90), Médio (+R$ 12,90), Avançado (+R$ 9,90)
+              </p>
+            </div>
+          )}
+        </div>
+        
+        <div style={styles.planosGrid}>
+          {(planosAtualizados.length > 0 ? planosAtualizados : planos).filter(plano => plano.tipo === 'corporativo').map((plano) => (
+            <div
+              key={plano.id}
+              style={{
+                ...styles.planoCard,
+                borderColor: plano.popular ? plano.cor : 'transparent'
+              }}
+              onMouseEnter={(e) => {
+                Object.assign(e.currentTarget.style, styles.planoCardHover);
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.1)';
+              }}
+            >
+              {plano.popular && (
+                <div style={styles.popularBadge}>
+                  ⭐ Mais Popular
+                </div>
+              )}
+              
+              <h3 style={{ ...styles.planoNome, color: plano.cor }}>
+                {plano.nome}
+              </h3>
+              
+              <p style={styles.planoDescricao}>
+                {plano.descricao}
+              </p>
+              
+              <div style={styles.precoContainer}>
+                <div style={{ ...styles.preco, color: plano.cor }}>
+                  {plano.preco}
+                </div>
+                <div style={styles.periodo}>
+                  {plano.periodo}
+                </div>
+              </div>
+              
+              <ul style={styles.recursosList}>
+                {plano.recursos.map((recurso, index) => (
+                  <li key={index} style={styles.recursoItem}>
+                    <div style={styles.checkIcon}>✓</div>
+                    <span>{recurso}</span>
+                  </li>
+                ))}
+              </ul>
+              
+              <button
+                style={{
+                  ...styles.escolherButton,
+                  backgroundColor: plano.cor
                 }}
                 onClick={() => handleEscolherPlano(plano)}
                 onMouseEnter={(e) => {

@@ -1,1 +1,29 @@
-[]
+[
+  {
+    "id": "1758547600001",
+    "projeto_id": "1758188097812",
+    "usuario_id": "6958bcb1-5e03-40fe-86fa-88ea95c53d0f",
+    "orcamento_id": "1758547500001",
+    "tipo_analise": "single",
+    "titulo": "Análise de Imagem - Fachada Principal",
+    "descricao": "Análise detalhada da fachada principal do imóvel para avaliação de estado de conservação",
+    "resultado_ia": "Análise realizada com sucesso. Imóvel apresenta bom estado de conservação com pequenos sinais de desgaste na pintura externa.",
+    "imagens_analisadas": [
+      {
+        "nome": "fachada_principal.jpg",
+        "url": "/uploads/fachada_principal.jpg",
+        "tamanho": 2048576,
+        "tipo": "image/jpeg"
+      }
+    ],
+    "metadados_analise": {
+      "confianca": 0.92,
+      "tempo_processamento": 3.2,
+      "modelo_ia": "gemini-1.5-pro",
+      "prompt_utilizado": "Analise esta imagem de fachada de imóvel residencial"
+    },
+    "status": "concluida",
+    "createdAt": "2025-09-18T10:15:00.000Z",
+    "updatedAt": "2025-09-18T10:15:00.000Z"
+  }
+]

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config/api';
+import { getLogoConfig } from '../utils/LogoUtils';
 
 const CustomHeader = ({ showInReports = false, className = '' }) => {
   const [logoConfig, setLogoConfig] = useState({
@@ -18,39 +19,22 @@ const CustomHeader = ({ showInReports = false, className = '' }) => {
 
   const loadLogoConfig = async () => {
     try {
-      const token = localStorage.getItem('token');
-      // Só faz requisição se estiver autenticado e o backend estiver disponível (não for placeholder)
-      if (token && API_BASE_URL.includes('localhost:3001') && !API_BASE_URL.includes('your-backend-url.com')) {
-        const response = await fetch(`${API_BASE_URL}/api/v1/configuracoes/logo`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.data) {
-            setLogoConfig(data.data);
-            setLoading(false);
-            return;
-          }
-        }
-      }
+      const config = await getLogoConfig();
+      setLogoConfig(config);
     } catch (error) {
-      console.log('Erro ao carregar configurações da API, usando localStorage:', error.message);
+      console.log('Erro ao carregar configurações:', error.message);
+      // Fallback para configuração padrão
+      setLogoConfig({
+        logoUrl: '',
+        logoSize: 100,
+        logoPosition: 'top-right',
+        logoOpacity: 100,
+        showInPages: true,
+        showInReports: true
+      });
+    } finally {
+      setLoading(false);
     }
-    
-    // Fallback para localStorage
-    const savedConfig = {
-      logoUrl: localStorage.getItem('logoUrl') || '',
-      logoSize: parseInt(localStorage.getItem('logoSize')) || 100,
-      logoPosition: localStorage.getItem('logoPosition') || 'top-right',
-      logoOpacity: parseInt(localStorage.getItem('logoOpacity')) || 100,
-      showInPages: localStorage.getItem('showInPages') !== 'false',
-      showInReports: localStorage.getItem('showInReports') !== 'false'
-    };
-    setLogoConfig(savedConfig);
-    setLoading(false);
   };
 
   // Determinar se deve mostrar o logo personalizado

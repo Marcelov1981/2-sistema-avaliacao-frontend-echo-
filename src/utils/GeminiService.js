@@ -29,17 +29,44 @@ class GeminiService {
   }
 
   // Analisa uma única imagem
-  async analyzeImage(imageFile, prompt = '', retries = 3) {
+  async analyzeImage(imageFile, prompt = '', propertyInfo = null, retries = 3) {
     try {
+
+      
       const imagePart = await this.fileToGenerativePart(imageFile);
       
-      const defaultPrompt = `
+      // Construir informações do imóvel se fornecidas
+      let propertyContext = '';
+      if (propertyInfo && Object.keys(propertyInfo).some(key => propertyInfo[key])) {
+        propertyContext = `
+        **INFORMAÇÕES DO PROJETO E CLIENTE:**
+        ${propertyInfo.clientName ? `- Cliente: ${propertyInfo.clientName}` : ''}
+        ${propertyInfo.projectName ? `- Projeto: ${propertyInfo.projectName}` : ''}
+        ${propertyInfo.projectAddress || propertyInfo.endereco ? `- Endereço: ${propertyInfo.projectAddress || propertyInfo.endereco}` : ''}
+        ${propertyInfo.projectCity || propertyInfo.cidade ? `- Cidade: ${propertyInfo.projectCity || propertyInfo.cidade}` : ''}
+        ${propertyInfo.projectState ? `- Estado: ${propertyInfo.projectState}` : ''}
+        ${propertyInfo.projectCep ? `- CEP: ${propertyInfo.projectCep}` : ''}
+        ${propertyInfo.projectType || propertyInfo.tipo ? `- Tipo: ${propertyInfo.projectType || propertyInfo.tipo}` : ''}
+        ${propertyInfo.projectPurpose || propertyInfo.finalidade ? `- Finalidade da Avaliação: ${propertyInfo.projectPurpose || propertyInfo.finalidade}` : ''}
+        ${propertyInfo.landArea || propertyInfo.areaTerreno ? `- Área do Terreno: ${propertyInfo.landArea || propertyInfo.areaTerreno} m²` : ''}
+        ${propertyInfo.builtArea || propertyInfo.areaConstruida ? `- Área Construída: ${propertyInfo.builtArea || propertyInfo.areaConstruida} m²` : ''}
+        ${propertyInfo.estimatedValue ? `- Valor Estimado: R$ ${propertyInfo.estimatedValue?.toLocaleString('pt-BR')}` : ''}
+        ${propertyInfo.budgetValue ? `- Valor do Orçamento: R$ ${propertyInfo.budgetValue?.toLocaleString('pt-BR')}` : ''}
+        ${propertyInfo.observations ? `- Observações: ${propertyInfo.observations}` : ''}
+        
+        **IMPORTANTE:** Use essas informações do projeto e cliente para contextualizar sua análise e fornecer avaliações mais precisas e relevantes.
+        `;
+        
+      }
+      
+      const defaultPrompt = `${propertyContext}
         Analise esta imagem de imóvel e forneça um relatório detalhado incluindo:
         
         1. **Descrição Geral**:
            - Tipo de imóvel (casa, apartamento, terreno, etc.)
            - Estilo arquitetônico
            - Condições gerais aparentes
+           ${propertyInfo?.tipo ? `- Verificar se corresponde ao tipo informado: ${propertyInfo.tipo}` : ''}
         
         2. **Características Estruturais**:
            - Estado da fachada
@@ -50,6 +77,7 @@ class GeminiService {
         3. **Aspectos Positivos**:
            - Pontos fortes do imóvel
            - Características que agregam valor
+           ${propertyInfo?.finalidade ? `- Adequação para ${propertyInfo.finalidade}` : ''}
         
         4. **Pontos de Atenção**:
            - Possíveis problemas identificados
@@ -58,15 +86,19 @@ class GeminiService {
         5. **Avaliação de Conservação** (1-10):
            - Nota geral do estado de conservação
            - Justificativa da nota
+           ${propertyInfo?.finalidade ? `- Considerações específicas para ${propertyInfo.finalidade}` : ''}
         
         6. **Recomendações**:
            - Sugestões de melhorias
            - Estimativa de investimentos necessários
+           ${propertyInfo?.cidade ? `- Considerações do mercado local de ${propertyInfo.cidade}` : ''}
         
         Seja detalhado e técnico na análise.
       `;
       
       const finalPrompt = prompt.trim() || defaultPrompt;
+      
+
       
       const result = await this.model.generateContent([finalPrompt, imagePart]);
       const response = await result.response;
@@ -108,26 +140,52 @@ class GeminiService {
   }
 
   // Analisa múltiplas imagens
-  async analyzeMultipleImages(imageFiles, prompt = '', retries = 3) {
+  async analyzeMultipleImages(imageFiles, prompt = '', propertyInfo = null, retries = 3) {
     try {
       const imageParts = await Promise.all(
         imageFiles.map(file => this.fileToGenerativePart(file))
       );
       
-      const defaultPrompt = `
+      // Construir informações do imóvel se fornecidas
+      let propertyContext = '';
+      if (propertyInfo && Object.keys(propertyInfo).some(key => propertyInfo[key])) {
+        propertyContext = `
+        **INFORMAÇÕES DO PROJETO E CLIENTE:**
+        ${propertyInfo.clientName ? `- Cliente: ${propertyInfo.clientName}` : ''}
+        ${propertyInfo.projectName ? `- Projeto: ${propertyInfo.projectName}` : ''}
+        ${propertyInfo.projectAddress || propertyInfo.endereco ? `- Endereço: ${propertyInfo.projectAddress || propertyInfo.endereco}` : ''}
+        ${propertyInfo.projectCity || propertyInfo.cidade ? `- Cidade: ${propertyInfo.projectCity || propertyInfo.cidade}` : ''}
+        ${propertyInfo.projectState ? `- Estado: ${propertyInfo.projectState}` : ''}
+        ${propertyInfo.projectCep ? `- CEP: ${propertyInfo.projectCep}` : ''}
+        ${propertyInfo.projectType || propertyInfo.tipo ? `- Tipo: ${propertyInfo.projectType || propertyInfo.tipo}` : ''}
+        ${propertyInfo.projectPurpose || propertyInfo.finalidade ? `- Finalidade da Avaliação: ${propertyInfo.projectPurpose || propertyInfo.finalidade}` : ''}
+        ${propertyInfo.landArea || propertyInfo.areaTerreno ? `- Área do Terreno: ${propertyInfo.landArea || propertyInfo.areaTerreno} m²` : ''}
+        ${propertyInfo.builtArea || propertyInfo.areaConstruida ? `- Área Construída: ${propertyInfo.builtArea || propertyInfo.areaConstruida} m²` : ''}
+        ${propertyInfo.estimatedValue ? `- Valor Estimado: R$ ${propertyInfo.estimatedValue?.toLocaleString('pt-BR')}` : ''}
+        ${propertyInfo.budgetValue ? `- Valor do Orçamento: R$ ${propertyInfo.budgetValue?.toLocaleString('pt-BR')}` : ''}
+        ${propertyInfo.observations ? `- Observações: ${propertyInfo.observations}` : ''}
+        
+        **IMPORTANTE:** Use essas informações do projeto e cliente para contextualizar sua análise e fornecer avaliações mais precisas e relevantes.
+        `;
+      }
+      
+      const defaultPrompt = `${propertyContext}
         Analise estas imagens de imóvel e forneça um relatório comparativo detalhado:
         
         1. **Análise Comparativa**:
            - Compare as diferentes perspectivas/ambientes
            - Identifique consistências e discrepâncias
+           ${propertyInfo?.tipo ? `- Verifique se todas as imagens correspondem ao tipo: ${propertyInfo.tipo}` : ''}
         
         2. **Avaliação Geral do Imóvel**:
            - Estado geral baseado em todas as imagens
            - Padrão de qualidade observado
+           ${propertyInfo?.finalidade ? `- Adequação geral para ${propertyInfo.finalidade}` : ''}
         
         3. **Análise por Ambiente/Área**:
            - Descrição específica de cada área mostrada
            - Condições particulares de cada ambiente
+           ${propertyInfo?.areaTerreno || propertyInfo?.areaConstruida ? `- Verificar se as áreas visíveis condizem com as informadas` : ''}
         
         4. **Pontos Críticos Identificados**:
            - Problemas recorrentes nas imagens
@@ -136,10 +194,12 @@ class GeminiService {
         5. **Avaliação Final** (1-10):
            - Nota consolidada baseada em todas as imagens
            - Justificativa detalhada
+           ${propertyInfo?.finalidade ? `- Considerações específicas para ${propertyInfo.finalidade}` : ''}
         
         6. **Recomendações Prioritárias**:
            - Ações imediatas necessárias
            - Investimentos recomendados por ordem de prioridade
+           ${propertyInfo?.cidade ? `- Considerações do mercado local de ${propertyInfo.cidade}` : ''}
         
         Forneça uma análise técnica e abrangente.
       `;
@@ -187,8 +247,9 @@ class GeminiService {
   }
 
   // Gera análise comparativa entre dois conjuntos de imagens
-  async comparePropertyImages(images1, images2, prompt = '', retries = 3) {
+  async comparePropertyImages(images1, images2, prompt = '', propertyInfo = null, retries = 3) {
     try {
+
       const imageParts1 = await Promise.all(
         images1.map(file => this.fileToGenerativePart(file))
       );
@@ -196,7 +257,30 @@ class GeminiService {
         images2.map(file => this.fileToGenerativePart(file))
       );
       
-      const defaultPrompt = `
+      // Construir informações do imóvel se fornecidas
+      let propertyContext = '';
+      if (propertyInfo && Object.keys(propertyInfo).some(key => propertyInfo[key])) {
+        propertyContext = `
+        **INFORMAÇÕES DO PROJETO E CLIENTE EM ANÁLISE:**
+        ${propertyInfo.clientName ? `- Cliente: ${propertyInfo.clientName}` : ''}
+        ${propertyInfo.projectName ? `- Projeto: ${propertyInfo.projectName}` : ''}
+        ${propertyInfo.projectAddress || propertyInfo.endereco ? `- Endereço: ${propertyInfo.projectAddress || propertyInfo.endereco}` : ''}
+        ${propertyInfo.projectCity || propertyInfo.cidade ? `- Cidade: ${propertyInfo.projectCity || propertyInfo.cidade}` : ''}
+        ${propertyInfo.projectState ? `- Estado: ${propertyInfo.projectState}` : ''}
+        ${propertyInfo.projectCep ? `- CEP: ${propertyInfo.projectCep}` : ''}
+        ${propertyInfo.projectType || propertyInfo.tipo ? `- Tipo: ${propertyInfo.projectType || propertyInfo.tipo}` : ''}
+        ${propertyInfo.projectPurpose || propertyInfo.finalidade ? `- Finalidade da Avaliação: ${propertyInfo.projectPurpose || propertyInfo.finalidade}` : ''}
+        ${propertyInfo.landArea || propertyInfo.areaTerreno ? `- Área do Terreno: ${propertyInfo.landArea || propertyInfo.areaTerreno} m²` : ''}
+        ${propertyInfo.builtArea || propertyInfo.areaConstruida ? `- Área Construída: ${propertyInfo.builtArea || propertyInfo.areaConstruida} m²` : ''}
+        ${propertyInfo.estimatedValue ? `- Valor Estimado: R$ ${propertyInfo.estimatedValue?.toLocaleString('pt-BR')}` : ''}
+        ${propertyInfo.budgetValue ? `- Valor do Orçamento: R$ ${propertyInfo.budgetValue?.toLocaleString('pt-BR')}` : ''}
+        ${propertyInfo.observations ? `- Observações: ${propertyInfo.observations}` : ''}
+        
+        **IMPORTANTE:** Use essas informações do projeto e cliente para contextualizar sua comparação e fornecer análises mais precisas.
+        `;
+      }
+      
+      const defaultPrompt = `${propertyContext}
         Compare estes dois conjuntos de imagens de imóveis e forneça uma análise comparativa:
         
         **PRIMEIRO CONJUNTO DE IMAGENS:**
@@ -211,18 +295,23 @@ class GeminiService {
            - Estado de conservação de cada imóvel
            - Qualidade dos acabamentos
            - Padrão construtivo
+           ${propertyInfo?.tipo ? `- Adequação ao tipo de imóvel: ${propertyInfo.tipo}` : ''}
         
         2. **Análise de Valor**:
            - Qual imóvel apresenta melhor custo-benefício
            - Fatores que influenciam o valor de cada um
+           ${propertyInfo?.finalidade ? `- Considerações específicas para ${propertyInfo.finalidade}` : ''}
+           ${propertyInfo?.cidade ? `- Contexto do mercado de ${propertyInfo.cidade}` : ''}
         
         3. **Pontos Fortes e Fracos**:
            - Vantagens de cada imóvel
            - Desvantagens identificadas
+           ${propertyInfo?.areaTerreno || propertyInfo?.areaConstruida ? `- Análise das áreas em relação ao informado` : ''}
         
         4. **Recomendação**:
            - Qual imóvel é mais recomendado e por quê
            - Considerações para a decisão
+           ${propertyInfo?.finalidade ? `- Melhor adequação para ${propertyInfo.finalidade}` : ''}
         
         5. **Notas Comparativas** (1-10):
            - Nota para cada imóvel
@@ -253,7 +342,7 @@ class GeminiService {
         }))
       };
     } catch (error) {
-      console.error('Erro na comparação das imagens:', error);
+      console.error('Erro na comparacao das imagens:', error);
       
       // Se for erro 503 (modelo sobrecarregado) e ainda temos tentativas
       if (error.message.includes('503') || error.message.includes('overloaded')) {

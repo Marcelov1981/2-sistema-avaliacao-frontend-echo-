@@ -74,7 +74,7 @@ router.get('/', authenticateToken, (req, res) => {
   try {
     const projetos = readData();
     // Filtrar projetos do usuário logado
-    const projetosUsuario = projetos.filter(p => p.usuarioId === req.user.id);
+    const projetosUsuario = projetos.filter(p => p.usuario_id === req.user.id);
     res.json({
       success: true,
       data: projetosUsuario
@@ -92,7 +92,7 @@ router.get('/', authenticateToken, (req, res) => {
 router.get('/:id', authenticateToken, (req, res) => {
   try {
     const projetos = readData();
-    const projeto = projetos.find(p => p.id === req.params.id && p.usuarioId === req.user.id);
+    const projeto = projetos.find(p => p.id === req.params.id && p.usuario_id === req.user.id);
     
     if (!projeto) {
       return res.status(404).json({ 
@@ -121,7 +121,9 @@ router.post('/', authenticateToken, (req, res) => {
     const novoProjeto = {
       id: Date.now().toString(),
       ...req.body,
-      usuarioId: req.user.id, // Associar ao usuário logado
+      usuario_id: req.user.id, // Associar ao usuário logado
+      status: req.body.status || 'em_andamento',
+      imagens: req.body.imagens || [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };

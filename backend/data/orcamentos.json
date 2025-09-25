@@ -1,0 +1,17 @@
+[
+  {
+    "id": "1758547500001",
+    "projeto_id": "1758188097812",
+    "usuario_id": "6958bcb1-5e03-40fe-86fa-88ea95c53d0f",
+    "titulo": "Orçamento para Avaliação Residencial",
+    "descricao": "Avaliação completa de imóvel residencial incluindo análise de mercado e comparativos",
+    "valor": 2500.00,
+    "tipo_servico": "avaliacao_imovel",
+    "prazo_execucao": "7",
+    "status": "aprovado",
+    "observacoes": "Inclui visita técnica e relatório detalhado",
+    "data_vencimento": "2025-09-25T23:59:59.000Z",
+    "createdAt": "2025-09-18T10:00:00.000Z",
+    "updatedAt": "2025-09-18T10:00:00.000Z"
+  }
+]

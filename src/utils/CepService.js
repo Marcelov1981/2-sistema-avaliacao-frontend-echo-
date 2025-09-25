@@ -22,22 +22,42 @@ class CepService {
         throw new Error('Cidade e logradouro devem ter pelo menos 3 caracteres');
       }
       
-      // Codifica os parâmetros para URL
-      const ufEncoded = encodeURIComponent(uf.trim());
-      const cidadeEncoded = encodeURIComponent(cidade.trim());
-      const logradouroEncoded = encodeURIComponent(logradouro.trim());
+      // Normaliza e codifica os parâmetros para URL
+      // Remove acentos e caracteres especiais para melhor compatibilidade
+      const normalizeString = (str) => {
+        return str
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+          .replace(/[^a-zA-Z0-9\s]/g, '') // Remove caracteres especiais exceto espaços
+          .trim();
+      };
       
-      const response = await fetch(`https://viacep.com.br/ws/${ufEncoded}/${cidadeEncoded}/${logradouroEncoded}/json/`);
+      const ufNormalized = normalizeString(uf.toUpperCase());
+      const cidadeNormalized = normalizeString(cidade);
+      const logradouroNormalized = normalizeString(logradouro);
+      
+      // Codifica os parâmetros para URL
+      const ufEncoded = encodeURIComponent(ufNormalized);
+      const cidadeEncoded = encodeURIComponent(cidadeNormalized);
+      const logradouroEncoded = encodeURIComponent(logradouroNormalized);
+      
+      console.log(`Buscando CEP para: UF=${ufEncoded}, Cidade=${cidadeEncoded}, Logradouro=${logradouroEncoded}`);
+      
+      const url = `https://viacep.com.br/ws/${ufEncoded}/${cidadeEncoded}/${logradouroEncoded}/json/`;
+      const response = await fetch(url);
       
       if (!response.ok) {
-        throw new Error('Erro na consulta do endereço');
+        if (response.status === 400) {
+          throw new Error('Parâmetros inválidos. Verifique se a cidade e logradouro têm pelo menos 3 caracteres.');
+        }
+        throw new Error(`Erro na consulta do endereço (${response.status})`);
       }
       
       const data = await response.json();
       
       // Verifica se encontrou resultados
       if (!Array.isArray(data) || data.length === 0) {
-        throw new Error('Nenhum CEP encontrado para este endereço');
+        throw new Error('Nenhum CEP encontrado para este endereço. Tente ser mais específico ou verifique a grafia.');
       }
       
       // Retorna os resultados formatados
@@ -51,12 +71,15 @@ class CepService {
         ddd: item.ddd || ''
       }));
       
+      console.log(`Encontrados ${resultados.length} resultados`);
+      
       return {
         success: true,
         data: resultados,
         total: resultados.length
       };
     } catch (error) {
+      console.error('Erro na busca de CEP por endereço:', error);
       return {
         success: false,
         error: error.message

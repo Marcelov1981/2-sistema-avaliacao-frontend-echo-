@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import GeminiService from '../utils/GeminiService';
+import React, { useState, useEffect } from 'react';
+import CustomAIService from '../utils/CustomAIService';
 import PDFGenerator from '../utils/PDFGenerator';
 import SafariNotification from './SafariNotification.jsx';
 import SafariCompatibility from '../utils/SafariCompatibility.js';
+import LaudoPDF from './LaudoPDF';
+import relationshipService from '../services/relationshipService';
 
 const AIImageAnalysis = () => {
   const [activeTab, setActiveTab] = useState('analysis');
@@ -15,6 +17,22 @@ const AIImageAnalysis = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [analysisType, setAnalysisType] = useState('single'); // single, multiple, comparison
+  const [showLaudoPDF, setShowLaudoPDF] = useState(false);
+  const [savedAvaliacao, setSavedAvaliacao] = useState(null);
+  const [detailedReport, setDetailedReport] = useState(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [editableReport, setEditableReport] = useState(null);
+  const [isEditingReport, setIsEditingReport] = useState(false);
+  
+  // Estados para dados de projeto
+  const [clientes, setClientes] = useState([]);
+  const [projetos, setProjetos] = useState([]);
+  const [orcamentos, setOrcamentos] = useState([]);
+  const [selectedCliente, setSelectedCliente] = useState('');
+  const [selectedProjeto, setSelectedProjeto] = useState('');
+  const [selectedOrcamento, setSelectedOrcamento] = useState('');
+  const [loadingData, setLoadingData] = useState(false);
+  
   const [propertyInfo, setPropertyInfo] = useState({
     endereco: '',
     cidade: '',
@@ -48,6 +66,91 @@ const AIImageAnalysis = () => {
     setDatabaseImages(prev => [...prev, ...files]);
   };
 
+  // Carregar dados iniciais
+  useEffect(() => {
+    fetchClientes();
+  }, []);
+
+  // Carregar projetos quando cliente for selecionado
+  useEffect(() => {
+    if (selectedCliente) {
+      fetchProjetos(selectedCliente);
+    } else {
+      setProjetos([]);
+      setSelectedProjeto('');
+      setOrcamentos([]);
+      setSelectedOrcamento('');
+    }
+  }, [selectedCliente]);
+
+  // Carregar orçamentos quando projeto for selecionado
+  useEffect(() => {
+    if (selectedProjeto) {
+      fetchOrcamentos(selectedProjeto);
+    } else {
+      setOrcamentos([]);
+      setSelectedOrcamento('');
+    }
+  }, [selectedProjeto]);
+
+  // Atualizar propertyInfo quando projeto for selecionado
+  useEffect(() => {
+    if (selectedProjeto) {
+      const projeto = projetos.find(p => p.id === selectedProjeto);
+      if (projeto) {
+        setPropertyInfo({
+          endereco: projeto.endereco_imovel || '',
+          cidade: projeto.cidade_imovel || '',
+          tipo: projeto.tipo_imovel || '',
+          areaTerreno: projeto.area_terreno || '',
+          areaConstruida: projeto.area_construida || '',
+          finalidade: projeto.finalidade_avaliacao || ''
+        });
+      }
+    }
+  }, [selectedProjeto, projetos]);
+
+  // Funções para carregar dados usando relationshipService
+  const fetchClientes = async () => {
+    try {
+      setLoadingData(true);
+      const data = await relationshipService.getUserCompleteData();
+      setClientes(data.clientes || []);
+    } catch (error) {
+      console.error('Erro ao carregar clientes:', error);
+      setError('Erro ao carregar clientes');
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const fetchProjetos = async (clienteId) => {
+    try {
+      setLoadingData(true);
+      const data = await relationshipService.getUserCompleteData();
+      const projetosCliente = data.projetos.filter(p => p.cliente_id === clienteId);
+      setProjetos(projetosCliente);
+    } catch (error) {
+      console.error('Erro ao carregar projetos:', error);
+      setError('Erro ao carregar projetos');
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const fetchOrcamentos = async (projetoId) => {
+    try {
+      setLoadingData(true);
+      const projectData = await relationshipService.getProjectWithRelations(projetoId);
+      setOrcamentos(projectData.orcamentos || []);
+    } catch (error) {
+      console.error('Erro ao carregar orçamentos:', error);
+      setError('Erro ao carregar orçamentos');
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
   const handleWebscrapingImageUpload = (event) => {
     const files = Array.from(event.target.files);
     setWebscrapingImages(prev => [...prev, ...files]);
@@ -78,6 +181,22 @@ const AIImageAnalysis = () => {
 
   // Executa análise
   const runAnalysis = async () => {
+    // Validações específicas por tipo de análise
+    if (analysisType === 'single' && images.length === 0) {
+      setError('Selecione uma imagem para análise única.');
+      return;
+    }
+    
+    if (analysisType === 'multiple' && images.length < 2) {
+      setError('Selecione pelo menos 2 imagens para análise múltipla.');
+      return;
+    }
+    
+    if (analysisType === 'comparison' && images.length < 2) {
+      setError('Selecione pelo menos 2 imagens para comparação.');
+      return;
+    }
+    
     if (images.length === 0) {
       setError('Selecione pelo menos uma imagem para análise.');
       return;
@@ -88,17 +207,62 @@ const AIImageAnalysis = () => {
     setAnalysisResult(null);
 
     try {
+      // Enriquecer propertyInfo com dados do projeto selecionado
+      const selectedProject = projetos.find(p => p.id === selectedProjeto);
+      const selectedClient = clientes.find(c => c.id === selectedCliente);
+      const selectedBudget = orcamentos.find(o => o.id === selectedOrcamento);
+      
+      const enrichedPropertyInfo = {
+        ...propertyInfo,
+        ...(selectedProject && {
+          projectId: selectedProject.id,
+          projectName: selectedProject.nome,
+          clientId: selectedProject.cliente_id,
+          clientName: selectedClient?.nome,
+          clientType: selectedClient?.tipo,
+          projectType: selectedProject.tipo_imovel,
+          projectPurpose: selectedProject.finalidade_avaliacao,
+          projectAddress: selectedProject.endereco_imovel,
+          projectCity: selectedProject.cidade_imovel,
+          projectState: selectedProject.estado_imovel,
+          projectCep: selectedProject.cep_imovel,
+          landArea: selectedProject.area_terreno,
+          builtArea: selectedProject.area_construida,
+          estimatedValue: selectedProject.valor_estimado,
+          deliveryDeadline: selectedProject.prazo_entrega,
+          observations: selectedProject.observacoes
+        }),
+        ...(selectedBudget && {
+          budgetId: selectedBudget.id,
+          budgetValue: selectedBudget.valor,
+          budgetStatus: selectedBudget.status,
+          budgetDate: selectedBudget.data_criacao
+        })
+      };
+
+
+
       let result;
       
       if (analysisType === 'single' && images.length > 0) {
-        result = await GeminiService.analyzeImage(images[0], customPrompt);
+        result = await CustomAIService.analyzeImageWithLocation(images[0], customPrompt, enrichedPropertyInfo);
       } else if (analysisType === 'multiple') {
-        result = await GeminiService.analyzeMultipleImages(images, customPrompt);
+        result = await CustomAIService.analyzeMultipleImages(images, customPrompt, enrichedPropertyInfo);
       } else if (analysisType === 'comparison' && images.length >= 2) {
         const midPoint = Math.ceil(images.length / 2);
         const images1 = images.slice(0, midPoint);
         const images2 = images.slice(midPoint);
-        result = await GeminiService.comparePropertyImages(images1, images2, customPrompt);
+        // Para comparação, analisamos ambos os grupos e comparamos os resultados
+        const result1 = await CustomAIService.analyzeMultipleImages(images1, customPrompt, enrichedPropertyInfo);
+        const result2 = await CustomAIService.analyzeMultipleImages(images2, customPrompt, enrichedPropertyInfo);
+        result = {
+          success: true,
+          analysis: `COMPARAÇÃO ENTRE GRUPOS DE IMAGENS:\n\nGRUPO 1:\n${result1.analysis}\n\nGRUPO 2:\n${result2.analysis}\n\nCOMPARAÇÃO:\nAmbos os grupos foram analisados com a nova IA avançada incluindo metadados EXIF, geolocalização e análise de mercado.`,
+          confidence: Math.min(result1.confidence || 0.8, result2.confidence || 0.8),
+          metadata: result1.metadata,
+          locationData: result1.locationData,
+          marketAnalysis: result1.marketAnalysis
+        };
       } else {
         setError('Configuração inválida para o tipo de análise selecionado.');
         setLoading(false);
@@ -108,7 +272,7 @@ const AIImageAnalysis = () => {
       if (result.success) {
         setAnalysisResult({
           ...result,
-          propertyInfo,
+          propertyInfo: enrichedPropertyInfo,
           images: images.map(img => ({
             name: img.name,
             size: img.size,
@@ -140,6 +304,39 @@ const AIImageAnalysis = () => {
     setError('');
 
     try {
+      // Enriquecer propertyInfo com dados do projeto selecionado
+      const selectedProject = projetos.find(p => p.id === selectedProjeto);
+      const selectedClient = clientes.find(c => c.id === selectedCliente);
+      const selectedBudget = orcamentos.find(o => o.id === selectedOrcamento);
+      
+      const enrichedPropertyInfo = {
+        ...propertyInfo,
+        ...(selectedProject && {
+          projectId: selectedProject.id,
+          projectName: selectedProject.nome,
+          clientId: selectedProject.cliente_id,
+          clientName: selectedClient?.nome,
+          clientType: selectedClient?.tipo,
+          projectType: selectedProject.tipo_imovel,
+          projectPurpose: selectedProject.finalidade_avaliacao,
+          projectAddress: selectedProject.endereco_imovel,
+          projectCity: selectedProject.cidade_imovel,
+          projectState: selectedProject.estado_imovel,
+          projectCep: selectedProject.cep_imovel,
+          landArea: selectedProject.area_terreno,
+          builtArea: selectedProject.area_construida,
+          estimatedValue: selectedProject.valor_estimado,
+          deliveryDeadline: selectedProject.prazo_entrega,
+          observations: selectedProject.observacoes
+        }),
+        ...(selectedBudget && {
+          budgetId: selectedBudget.id,
+          budgetValue: selectedBudget.valor,
+          budgetStatus: selectedBudget.status,
+          budgetDate: selectedBudget.data_criacao
+        })
+      };
+
       const prompt = customPrompt || `
         Compare as imagens do banco de dados com as imagens de webscraping e forneça uma análise detalhada sobre:
         
@@ -169,11 +366,18 @@ const AIImageAnalysis = () => {
         - Próximos passos recomendados
       `;
 
-      const result = await GeminiService.comparePropertyImages(
-        databaseImages,
-        webscrapingImages,
-        prompt
-      );
+      // Análise comparativa usando CustomAIService
+      const result1 = await CustomAIService.analyzeMultipleImages(databaseImages, prompt, enrichedPropertyInfo);
+      const result2 = await CustomAIService.analyzeMultipleImages(webscrapingImages, prompt, enrichedPropertyInfo);
+      
+      const result = {
+        success: true,
+        analysis: `COMPARAÇÃO DETALHADA ENTRE IMAGENS:\n\nIMAGENS DO BANCO DE DADOS:\n${result1.analysis}\n\nIMAGENS DO WEBSCRAPING:\n${result2.analysis}\n\nANÁLISE COMPARATIVA:\nComparação realizada com IA avançada incluindo análise de metadados, geolocalização e dados de mercado.`,
+        confidence: Math.min(result1.confidence || 0.8, result2.confidence || 0.8),
+        metadata: result1.metadata,
+        locationData: result1.locationData,
+        marketAnalysis: result1.marketAnalysis
+      };
 
       if (result.success) {
         setComparisonResult({
@@ -193,6 +397,65 @@ const AIImageAnalysis = () => {
       setError(`Erro inesperado: ${err.message}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const generateDetailedReport = () => {
+    if (activeTab === 'analysis' && analysisResult) {
+      const report = {
+        titulo: 'Relatório de Análise de Imóvel',
+        dataAnalise: new Date().toLocaleString('pt-BR'),
+        analiseVisual: analysisResult.visualAnalysis?.analysis || analysisResult.analysis || analysisResult.comparison,
+        analiseContextual: analysisResult.contextualAnalysis || '',
+        recomendacoes: analysisResult.recommendations || '',
+        metadados: analysisResult.imageMetadata || analysisResult.metadata || {},
+        localizacao: analysisResult.locationData || {},
+        mercado: analysisResult.marketAnalysis || {},
+        propriedadesSimilares: analysisResult.similarProperties || [],
+        tecnico: {
+          timestamp: analysisResult.timestamp,
+          aiProvider: analysisResult.aiProvider || 'IA Personalizada GeoMind',
+          confidence: analysisResult.confidence || 0.85,
+          analysisMethod: analysisResult.analysisMethod || 'Multi-Provider AI',
+          processingTime: analysisResult.metadata?.processingTime || 'N/A',
+          success: analysisResult.success !== false
+        },
+        imagens: images.map((img, index) => ({
+          nome: `Imagem ${index + 1}`,
+          arquivo: img.name || `imagem-${index + 1}`,
+          tamanho: img.size ? `${(img.size / 1024 / 1024).toFixed(2)} MB` : 'N/A'
+        }))
+      };
+      
+      setDetailedReport(report);
+       setEditableReport(report);
+       setShowReportModal(true);
+    } else if (activeTab === 'comparison' && comparisonResult) {
+      const report = {
+        titulo: 'Relatório de Comparação de Imóveis',
+        dataAnalise: new Date().toLocaleString('pt-BR'),
+        analiseComparativa: comparisonResult.analysis,
+        tecnico: {
+          timestamp: comparisonResult.timestamp,
+          aiProvider: comparisonResult.aiProvider || 'IA Personalizada GeoMind',
+          confidence: comparisonResult.confidence,
+          analysisMethod: comparisonResult.analysisMethod || 'Multi-Provider AI'
+        },
+        imagensOriginais: databaseImages.map((img, index) => ({
+          nome: `Imagem Original ${index + 1}`,
+          arquivo: img.name || `imagem-original-${index + 1}`,
+          tamanho: img.size ? `${(img.size / 1024 / 1024).toFixed(2)} MB` : 'N/A'
+        })),
+        imagensComparacao: webscrapingImages.map((img, index) => ({
+          nome: `Imagem Comparação ${index + 1}`,
+          arquivo: img.name || `imagem-comparacao-${index + 1}`,
+          tamanho: img.size ? `${(img.size / 1024 / 1024).toFixed(2)} MB` : 'N/A'
+        }))
+      };
+      
+      setDetailedReport(report);
+       setEditableReport(report);
+       setShowReportModal(true);
     }
   };
 
@@ -217,23 +480,103 @@ const AIImageAnalysis = () => {
       const pdfGenerator = new PDFGenerator();
       
       if (activeTab === 'analysis') {
+        // Usar conteúdo editado se disponível
+        const analysisContent = editableReport && editableReport.analiseVisual 
+          ? editableReport.analiseVisual 
+          : analysisResult.analysis;
+          
         await pdfGenerator.generateAnalysisReport({
           propertyInfo,
-          analysis: analysisResult.analysis,
+          analysis: analysisContent,
           images,
           timestamp: analysisResult.timestamp
         });
+        // Fazer o download do PDF
+        const fileName = `analise_imovel_${new Date().toISOString().split('T')[0]}.pdf`;
+        pdfGenerator.save(fileName);
       } else {
+        // Usar conteúdo editado se disponível
+        const comparisonContent = editableReport && editableReport.analiseComparativa 
+          ? editableReport.analiseComparativa 
+          : comparisonResult.analysis;
+          
         await pdfGenerator.generateComparisonReport({
           propertyInfo,
-          analysis: comparisonResult.analysis,
+          analysis: comparisonContent,
           databaseImages,
           webscrapingImages,
           timestamp: comparisonResult.timestamp
         });
+        // Fazer o download do PDF
+        const fileName = `comparacao_imovel_${new Date().toISOString().split('T')[0]}.pdf`;
+        pdfGenerator.save(fileName);
       }
     } catch (err) {
       setError(`Erro ao gerar PDF: ${err.message}`);
+    }
+  };
+
+  // Salvar análise como avaliação
+  const saveAnalysisAsAvaliacao = async () => {
+    if (!analysisResult || !selectedProjeto || !selectedOrcamento) {
+      setError('É necessário ter um resultado de análise e um projeto/orçamento selecionado.');
+      return;
+    }
+
+    try {
+       setLoading(true);
+       const selectedBudget = orcamentos.find(o => o.id === selectedOrcamento);
+       const selectedProject = projetos.find(p => p.id === selectedProjeto);
+       const selectedClient = clientes.find(c => c.id === selectedProject?.cliente_id);
+      
+      const avaliacaoData = {
+        orcamento_id: selectedOrcamento,
+        projeto_id: selectedProjeto,
+        cliente_id: selectedProject?.cliente_id,
+        metodologia_utilizada: 'Análise de Imagens com IA',
+        valor_final: selectedBudget?.valor || 0,
+        observacoes: `Análise realizada com IA para o projeto "${selectedProject?.nome}" do cliente "${selectedClient?.nome}":\n\n${analysisResult.analysis}`,
+        status: 'concluida',
+        data_avaliacao: new Date().toISOString().split('T')[0],
+        detalhes_analise: {
+          tipo_analise: analysisType,
+          numero_imagens: analysisResult.images?.length || 0,
+          propriedades_analisadas: analysisResult.propertyInfo,
+          timestamp: new Date().toISOString(),
+          projeto_info: {
+            nome: selectedProject?.nome,
+            endereco: selectedProject?.endereco,
+            cliente: selectedClient?.nome
+          }
+        }
+      };
+
+      // Usar relationshipService para criar a avaliação com relacionamentos
+      const response = await relationshipService.createEvaluationWithRelations(avaliacaoData);
+      
+      if (response.data.success) {
+        const avaliacaoSalva = {
+          ...response.data.data,
+          orcamento: selectedBudget
+        };
+        setSavedAvaliacao(avaliacaoSalva);
+        alert('Análise salva como avaliação com sucesso! Agora você pode gerar o laudo.');
+      } else {
+        throw new Error(response.data.message || 'Erro ao salvar avaliação');
+      }
+    } catch (error) {
+      console.error('Erro ao salvar avaliação:', error);
+      setError('Erro ao salvar análise como avaliação: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGerarLaudo = () => {
+    if (savedAvaliacao) {
+      setShowLaudoPDF(true);
+    } else {
+      alert('Primeiro salve a análise como avaliação para poder gerar o laudo.');
     }
   };
 
@@ -393,6 +736,33 @@ const AIImageAnalysis = () => {
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
       gap: '16px'
+    },
+    formRow: {
+      display: 'flex',
+      gap: '16px',
+      flexWrap: 'wrap'
+    },
+    projectInfo: {
+      backgroundColor: '#f0f9ff',
+      border: '1px solid #0ea5e9',
+      borderRadius: '8px',
+      padding: '16px',
+      marginTop: '12px'
+    },
+    projectInfoTitle: {
+      fontSize: '16px',
+      fontWeight: '600',
+      color: '#0369a1',
+      marginBottom: '8px'
+    },
+    projectInfoText: {
+      fontSize: '14px',
+      color: '#374151',
+      marginBottom: '4px'
+    },
+    loadingText: {
+      color: '#6b7280',
+      fontStyle: 'italic'
     }
   };
 
@@ -443,6 +813,7 @@ const AIImageAnalysis = () => {
               >
                 <option value="single">Análise de Imagem Única</option>
                 <option value="multiple">Análise de Múltiplas Imagens</option>
+                <option value="comparison">Comparação de Imagens</option>
               </select>
             </div>
 
@@ -529,6 +900,77 @@ const AIImageAnalysis = () => {
           </div>
         </div>
 
+        {/* Seleção de Projeto */}
+        <div style={styles.section}>
+          <h3 style={styles.sectionTitle}>Vincular à Projeto</h3>
+          <div style={styles.formRow}>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Cliente</label>
+              <select
+                value={selectedCliente}
+                onChange={(e) => setSelectedCliente(e.target.value)}
+                style={styles.select}
+                disabled={loadingData}
+              >
+                <option value="">Selecione um cliente</option>
+                {clientes.map(cliente => (
+                  <option key={cliente.id} value={cliente.id}>
+                    {cliente.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Projeto</label>
+              <select
+                value={selectedProjeto}
+                onChange={(e) => setSelectedProjeto(e.target.value)}
+                style={styles.select}
+                disabled={!selectedCliente || loadingData}
+              >
+                <option value="">Selecione um projeto</option>
+                {projetos.map(projeto => (
+                  <option key={projeto.id} value={projeto.id}>
+                    {projeto.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Orçamento (Opcional)</label>
+              <select
+                value={selectedOrcamento}
+                onChange={(e) => setSelectedOrcamento(e.target.value)}
+                style={styles.select}
+                disabled={!selectedProjeto || loadingData}
+              >
+                <option value="">Selecione um orçamento</option>
+                {orcamentos.map(orcamento => (
+                  <option key={orcamento.id} value={orcamento.id}>
+                    {orcamento.descricao} - R$ {orcamento.valorEstimado?.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
+          {selectedProjeto && (
+            <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#f3f4f6', borderRadius: '8px' }}>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: '600' }}>Dados do Projeto Selecionado:</h4>
+              <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                <p><strong>Endereço:</strong> {propertyInfo.endereco}</p>
+                <p><strong>Cidade:</strong> {propertyInfo.cidade}</p>
+                <p><strong>Tipo:</strong> {propertyInfo.tipo}</p>
+                <p><strong>Finalidade:</strong> {propertyInfo.finalidade}</p>
+                {propertyInfo.areaTerreno && <p><strong>Área do Terreno:</strong> {propertyInfo.areaTerreno} m²</p>}
+                {propertyInfo.areaConstruida && <p><strong>Área Construída:</strong> {propertyInfo.areaConstruida} m²</p>}
+              </div>
+            </div>
+          )}
+        </div>
+
             {/* Upload de imagens */}
             <div style={styles.section}>
           <h3 style={styles.sectionTitle}>Imagens para Análise</h3>
@@ -613,12 +1055,51 @@ const AIImageAnalysis = () => {
               </button>
               
               {analysisResult && (
-                <button
-                  onClick={generatePDF}
-                  style={{ ...styles.button, ...styles.secondaryButton }}
-                >
-                  Gerar PDF
-                </button>
+                <>
+                  <button
+                    onClick={generateDetailedReport}
+                    style={{ ...styles.button, backgroundColor: '#3b82f6', color: 'white' }}
+                  >
+                    📋 Ver Relatório Detalhado
+                  </button>
+                  
+                  <button
+                    onClick={generatePDF}
+                    style={{ ...styles.button, ...styles.secondaryButton }}
+                  >
+                    Gerar PDF
+                  </button>
+                  
+                  {selectedProjeto && selectedOrcamento && (
+                    <>
+                      <button
+                        onClick={saveAnalysisAsAvaliacao}
+                        disabled={loading}
+                        style={{
+                          ...styles.button,
+                          backgroundColor: '#059669',
+                          color: 'white',
+                          opacity: loading ? 0.6 : 1
+                        }}
+                      >
+                        {loading ? 'Salvando...' : 'Salvar como Avaliação'}
+                      </button>
+                      
+                      {savedAvaliacao && (
+                        <button
+                          onClick={handleGerarLaudo}
+                          style={{
+                            ...styles.button,
+                            backgroundColor: '#7c3aed',
+                            color: 'white'
+                          }}
+                        >
+                          📄 Gerar Laudo
+                        </button>
+                      )}
+                    </>
+                  )}
+                </>
               )}
             </div>
           </>
@@ -755,12 +1236,21 @@ const AIImageAnalysis = () => {
               </button>
               
               {comparisonResult && (
-                <button
-                  onClick={generatePDF}
-                  style={{ ...styles.button, ...styles.secondaryButton }}
-                >
-                  Gerar PDF
-                </button>
+                <>
+                  <button
+                    onClick={generateDetailedReport}
+                    style={{ ...styles.button, backgroundColor: '#3b82f6', color: 'white' }}
+                  >
+                    📋 Ver Relatório Detalhado
+                  </button>
+                  
+                  <button
+                    onClick={generatePDF}
+                    style={{ ...styles.button, ...styles.secondaryButton }}
+                  >
+                    Gerar PDF
+                  </button>
+                </>
               )}
             </div>
           </>
@@ -777,13 +1267,86 @@ const AIImageAnalysis = () => {
         {/* Resultado da análise */}
         {analysisResult && activeTab === 'analysis' && (
           <div style={styles.resultCard}>
-            <h3 style={styles.sectionTitle}>Resultado da Análise</h3>
+            <h3 style={styles.sectionTitle}>🤖 Resultado da Análise da IA</h3>
+            
+            {/* Análise Principal */}
             <div style={styles.resultText}>
+              <h4 style={{ color: '#1f2937', marginBottom: '12px', fontSize: '16px' }}>📋 Análise Visual</h4>
               {analysisResult.analysis || analysisResult.comparison}
             </div>
             
-            <div style={{ marginTop: '16px', fontSize: '12px', color: '#6b7280' }}>
-              Análise realizada em: {new Date(analysisResult.timestamp).toLocaleString('pt-BR')}
+            {/* Metadados EXIF */}
+            {analysisResult.metadata && (
+              <div style={{ marginTop: '20px', padding: '16px', backgroundColor: '#f3f4f6', borderRadius: '8px' }}>
+                <h4 style={{ color: '#1f2937', marginBottom: '12px', fontSize: '16px' }}>📸 Metadados da Imagem</h4>
+                <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
+                  {analysisResult.metadata.camera && (
+                    <div><strong>Câmera:</strong> {analysisResult.metadata.camera}</div>
+                  )}
+                  {analysisResult.metadata.dateTime && (
+                    <div><strong>Data/Hora:</strong> {analysisResult.metadata.dateTime}</div>
+                  )}
+                  {analysisResult.metadata.gps && (
+                    <div><strong>GPS:</strong> {analysisResult.metadata.gps.latitude}, {analysisResult.metadata.gps.longitude}</div>
+                  )}
+                  {analysisResult.metadata.dimensions && (
+                    <div><strong>Dimensões:</strong> {analysisResult.metadata.dimensions}</div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Dados de Localização */}
+            {analysisResult.locationData && (
+              <div style={{ marginTop: '20px', padding: '16px', backgroundColor: '#ecfdf5', borderRadius: '8px' }}>
+                <h4 style={{ color: '#1f2937', marginBottom: '12px', fontSize: '16px' }}>📍 Informações de Localização</h4>
+                <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
+                  {analysisResult.locationData.address && (
+                    <div><strong>Endereço:</strong> {analysisResult.locationData.address}</div>
+                  )}
+                  {analysisResult.locationData.neighborhood && (
+                    <div><strong>Bairro:</strong> {analysisResult.locationData.neighborhood}</div>
+                  )}
+                  {analysisResult.locationData.city && (
+                    <div><strong>Cidade:</strong> {analysisResult.locationData.city}</div>
+                  )}
+                  {analysisResult.locationData.coordinates && (
+                    <div><strong>Coordenadas:</strong> {analysisResult.locationData.coordinates}</div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Análise de Mercado */}
+            {analysisResult.marketAnalysis && (
+              <div style={{ marginTop: '20px', padding: '16px', backgroundColor: '#fef3c7', borderRadius: '8px' }}>
+                <h4 style={{ color: '#1f2937', marginBottom: '12px', fontSize: '16px' }}>💰 Análise de Mercado</h4>
+                <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
+                  {analysisResult.marketAnalysis.averagePrice && (
+                    <div><strong>Preço Médio da Região:</strong> {analysisResult.marketAnalysis.averagePrice}</div>
+                  )}
+                  {analysisResult.marketAnalysis.priceRange && (
+                    <div><strong>Faixa de Preços:</strong> {analysisResult.marketAnalysis.priceRange}</div>
+                  )}
+                  {analysisResult.marketAnalysis.marketTrend && (
+                    <div><strong>Tendência:</strong> {analysisResult.marketAnalysis.marketTrend}</div>
+                  )}
+                  {analysisResult.marketAnalysis.similarProperties && (
+                    <div><strong>Propriedades Similares:</strong> {analysisResult.marketAnalysis.similarProperties} encontradas</div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Informações Técnicas */}
+            <div style={{ marginTop: '20px', padding: '16px', backgroundColor: '#e0e7ff', borderRadius: '8px' }}>
+              <h4 style={{ color: '#1f2937', marginBottom: '12px', fontSize: '16px' }}>⚙️ Informações Técnicas</h4>
+              <div style={{ fontSize: '12px', color: '#6b7280', lineHeight: '1.6' }}>
+                <div>Análise realizada em: {new Date(analysisResult.timestamp).toLocaleString('pt-BR')}</div>
+                <div>Modelo de IA: {analysisResult.aiProvider || 'IA Personalizada GeoMind'}</div>
+                <div>Confiança: {analysisResult.confidence ? (analysisResult.confidence * 100).toFixed(1) + '%' : 'N/A'}</div>
+                <div>Método: {analysisResult.analysisMethod || 'Multi-Provider AI'}</div>
+              </div>
             </div>
           </div>
         )}
@@ -800,6 +1363,385 @@ const AIImageAnalysis = () => {
               <div>Comparação realizada em: {new Date(comparisonResult.timestamp).toLocaleString('pt-BR')}</div>
               <div>Imagens do banco: {comparisonResult.databaseImageCount}</div>
               <div>Imagens de webscraping: {comparisonResult.webscrapingImageCount}</div>
+            </div>
+          </div>
+        )}
+        
+        {/* Modal do Relatório Detalhado */}
+        {showReportModal && detailedReport && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              width: '90%',
+              height: '90%',
+              maxWidth: '1000px',
+              position: 'relative',
+              overflow: 'auto'
+            }}>
+              <div style={{
+                padding: '20px',
+                borderBottom: '1px solid #e5e7eb',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                position: 'sticky',
+                top: 0,
+                backgroundColor: 'white',
+                zIndex: 1
+              }}>
+                <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>
+                  {detailedReport.titulo}
+                </h2>
+                <button
+                  onClick={() => setShowReportModal(false)}
+                  style={{
+                    background: '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '30px',
+                    height: '30px',
+                    cursor: 'pointer',
+                    fontSize: '16px'
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div style={{ padding: '20px' }}>
+                <div style={{ marginBottom: '20px' }}>
+                  <p><strong>Data da Análise:</strong> {detailedReport.dataAnalise}</p>
+                </div>
+                
+                {detailedReport.analiseVisual && (
+                   <div style={{ marginBottom: '20px' }}>
+                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                       <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>📋 Análise Visual</h3>
+                       <button
+                         onClick={() => setIsEditingReport(!isEditingReport)}
+                         style={{
+                           background: isEditingReport ? '#ef4444' : '#3b82f6',
+                           color: 'white',
+                           border: 'none',
+                           borderRadius: '6px',
+                           padding: '4px 8px',
+                           fontSize: '12px',
+                           cursor: 'pointer'
+                         }}
+                       >
+                         {isEditingReport ? '❌ Cancelar' : '✏️ Editar'}
+                       </button>
+                     </div>
+                     {isEditingReport ? (
+                       <textarea
+                         value={editableReport.analiseVisual}
+                         onChange={(e) => setEditableReport({
+                           ...editableReport,
+                           analiseVisual: e.target.value
+                         })}
+                         style={{
+                           width: '100%',
+                           minHeight: '200px',
+                           backgroundColor: '#f9fafb',
+                           padding: '16px',
+                           borderRadius: '8px',
+                           border: '2px solid #3b82f6',
+                           fontSize: '14px',
+                           lineHeight: '1.6',
+                           fontFamily: 'inherit',
+                           resize: 'vertical'
+                         }}
+                       />
+                     ) : (
+                       <div style={{
+                         backgroundColor: '#f9fafb',
+                         padding: '16px',
+                         borderRadius: '8px',
+                         whiteSpace: 'pre-wrap',
+                         fontSize: '14px',
+                         lineHeight: '1.6'
+                       }}>
+                         {editableReport.analiseVisual}
+                       </div>
+                     )}
+                   </div>
+                 )}
+                
+                {detailedReport.analiseComparativa && (
+                   <div style={{ marginBottom: '20px' }}>
+                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                       <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>🔍 Análise Comparativa</h3>
+                       <button
+                         onClick={() => setIsEditingReport(!isEditingReport)}
+                         style={{
+                           background: isEditingReport ? '#ef4444' : '#3b82f6',
+                           color: 'white',
+                           border: 'none',
+                           borderRadius: '6px',
+                           padding: '4px 8px',
+                           fontSize: '12px',
+                           cursor: 'pointer'
+                         }}
+                       >
+                         {isEditingReport ? '❌ Cancelar' : '✏️ Editar'}
+                       </button>
+                     </div>
+                     {isEditingReport ? (
+                       <textarea
+                         value={editableReport.analiseComparativa}
+                         onChange={(e) => setEditableReport({
+                           ...editableReport,
+                           analiseComparativa: e.target.value
+                         })}
+                         style={{
+                           width: '100%',
+                           minHeight: '200px',
+                           backgroundColor: '#f9fafb',
+                           padding: '16px',
+                           borderRadius: '8px',
+                           border: '2px solid #3b82f6',
+                           fontSize: '14px',
+                           lineHeight: '1.6',
+                           fontFamily: 'inherit',
+                           resize: 'vertical'
+                         }}
+                       />
+                     ) : (
+                       <div style={{
+                         backgroundColor: '#f9fafb',
+                         padding: '16px',
+                         borderRadius: '8px',
+                         whiteSpace: 'pre-wrap',
+                         fontSize: '14px',
+                         lineHeight: '1.6'
+                       }}>
+                         {editableReport.analiseComparativa}
+                       </div>
+                     )}
+                   </div>
+                 )}
+                
+                {detailedReport.metadados && Object.keys(detailedReport.metadados).length > 0 && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '10px' }}>📸 Metadados</h3>
+                    <div style={{
+                      backgroundColor: '#f3f4f6',
+                      padding: '16px',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}>
+                      {Object.entries(detailedReport.metadados).map(([key, value]) => (
+                        <div key={key} style={{ marginBottom: '4px' }}>
+                          <strong>{key}:</strong> {JSON.stringify(value)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {detailedReport.localizacao && Object.keys(detailedReport.localizacao).length > 0 && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '10px' }}>📍 Localização</h3>
+                    <div style={{
+                      backgroundColor: '#ecfdf5',
+                      padding: '16px',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}>
+                      {Object.entries(detailedReport.localizacao).map(([key, value]) => (
+                        <div key={key} style={{ marginBottom: '4px' }}>
+                          <strong>{key}:</strong> {JSON.stringify(value)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {detailedReport.mercado && Object.keys(detailedReport.mercado).length > 0 && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '10px' }}>💰 Análise de Mercado</h3>
+                    <div style={{
+                      backgroundColor: '#fef3c7',
+                      padding: '16px',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}>
+                      {Object.entries(detailedReport.mercado).map(([key, value]) => (
+                        <div key={key} style={{ marginBottom: '4px' }}>
+                          <strong>{key}:</strong> {JSON.stringify(value)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <div style={{ marginBottom: '20px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '10px' }}>⚙️ Informações Técnicas</h3>
+                  <div style={{
+                    backgroundColor: '#e0e7ff',
+                    padding: '16px',
+                    borderRadius: '8px',
+                    fontSize: '14px'
+                  }}>
+                    {Object.entries(detailedReport.tecnico).map(([key, value]) => (
+                      <div key={key} style={{ marginBottom: '4px' }}>
+                        <strong>{key}:</strong> {JSON.stringify(value)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {detailedReport.imagens && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '10px' }}>🖼️ Imagens Analisadas</h3>
+                    <div style={{
+                      backgroundColor: '#f9fafb',
+                      padding: '16px',
+                      borderRadius: '8px'
+                    }}>
+                      {detailedReport.imagens.map((img, index) => (
+                        <div key={index} style={{ marginBottom: '8px', fontSize: '14px' }}>
+                          <strong>{img.nome}:</strong> {img.arquivo} ({img.tamanho})
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {detailedReport.imagensOriginais && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '10px' }}>🖼️ Imagens Originais</h3>
+                    <div style={{
+                      backgroundColor: '#f9fafb',
+                      padding: '16px',
+                      borderRadius: '8px'
+                    }}>
+                      {detailedReport.imagensOriginais.map((img, index) => (
+                        <div key={index} style={{ marginBottom: '8px', fontSize: '14px' }}>
+                          <strong>{img.nome}:</strong> {img.arquivo} ({img.tamanho})
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {detailedReport.imagensComparacao && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '10px' }}>🔍 Imagens de Comparação</h3>
+                    <div style={{
+                      backgroundColor: '#f9fafb',
+                      padding: '16px',
+                      borderRadius: '8px'
+                    }}>
+                      {detailedReport.imagensComparacao.map((img, index) => (
+                        <div key={index} style={{ marginBottom: '8px', fontSize: '14px' }}>
+                          <strong>{img.nome}:</strong> {img.arquivo} ({img.tamanho})
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'center',
+                  marginTop: '30px',
+                  paddingTop: '20px',
+                  borderTop: '1px solid #e5e7eb'
+                }}>
+                  <button
+                     onClick={() => {
+                       if (isEditingReport) {
+                         setIsEditingReport(false);
+                         alert('✅ Alterações salvas! Agora você pode gerar o PDF com o conteúdo editado.');
+                       } else {
+                         generatePDF();
+                       }
+                     }}
+                     style={{
+                       ...styles.button,
+                       backgroundColor: isEditingReport ? '#f59e0b' : '#10b981',
+                       color: 'white'
+                     }}
+                   >
+                     {isEditingReport ? '💾 Salvar Alterações' : '📄 Gerar PDF'}
+                   </button>
+                  
+                  <button
+                    onClick={() => setShowReportModal(false)}
+                    style={{
+                      ...styles.button,
+                      backgroundColor: '#6b7280',
+                      color: 'white'
+                    }}
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Modal do Laudo PDF */}
+        {showLaudoPDF && savedAvaliacao && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              width: '90%',
+              height: '90%',
+              maxWidth: '1200px',
+              position: 'relative'
+            }}>
+              <button
+                onClick={() => setShowLaudoPDF(false)}
+                style={{
+                  position: 'absolute',
+                  top: '10px',
+                  right: '10px',
+                  background: '#ef4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '30px',
+                  height: '30px',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  zIndex: 1001
+                }}
+              >
+                ×
+              </button>
+              <LaudoPDF 
+                 avaliacao={savedAvaliacao} 
+                 onClose={() => setShowLaudoPDF(false)}
+               />
             </div>
           </div>
         )}

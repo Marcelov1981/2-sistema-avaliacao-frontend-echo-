@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Row, Col, Progress, Alert, Statistic, Tag, Divider, Typography, Button, Space } from 'antd';
 import { TrophyOutlined, WarningOutlined, CheckCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import SafariCompatibility from '../utils/SafariCompatibility.js';
@@ -9,18 +9,158 @@ const PropertyComparisonReport = ({ comparisonData, onExport }) => {
   const [reportData, setReportData] = useState(null);
   const [valueAnalysis, setValueAnalysis] = useState(null);
 
-  useEffect(() => {
-    console.log('PropertyComparisonReport - comparisonData recebido:', comparisonData);
-    if (comparisonData) {
-      console.log('PropertyComparisonReport - Gerando relatório...');
-      generateReport(comparisonData);
-    } else {
-      console.log('PropertyComparisonReport - Nenhum dado de comparação disponível');
-    }
-  }, [comparisonData]);
-
   // Gera relatório completo de análise
-  const generateReport = (data) => {
+  const generateReport = useCallback((data) => {
+    // Calcula variância
+    const calculateVariance = (values) => {
+      const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
+      const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+      return Math.sqrt(variance);
+    };
+
+    // Calcula score de qualidade das imagens
+    const calculateQualityScore = (comparisons) => {
+      if (!comparisons.length) return 0;
+      
+      const avgQuality = comparisons.reduce((sum, comp) => {
+        const qualityScore = comp.qualityComparison ? comp.qualityComparison.overall : 50;
+        return sum + qualityScore;
+      }, 0) / comparisons.length;
+      
+      return Math.round(avgQuality);
+    };
+
+    // Calcula score de consistência
+    const calculateConsistencyScore = (comparisons) => {
+      if (!comparisons.length) return 0;
+      
+      const avgSimilarity = comparisons.reduce((sum, comp) => {
+        const similarity = comp.similarity && comp.similarity.overall ? comp.similarity.overall : 0;
+        return sum + similarity;
+      }, 0) / comparisons.length;
+      return Math.round(avgSimilarity);
+    };
+
+    // Calcula score de apelo visual
+    const calculateVisualAppealScore = (comparisons) => {
+      if (!comparisons.length) return 0;
+      
+      const avgVisualScore = comparisons.reduce((sum, comp) => {
+        const visualScore = comp.similarity && comp.similarity.overall ? comp.similarity.overall : 50;
+        return sum + visualScore;
+      }, 0) / comparisons.length;
+      
+      return Math.round(avgVisualScore);
+    };
+
+    // Calcula score de autenticidade
+    const calculateAuthenticityScore = (comparisons) => {
+      if (!comparisons.length) return 0;
+      
+      const similarities = comparisons.map(c => {
+        return c.similarity && c.similarity.overall ? c.similarity.overall : 0;
+      });
+      const varianceInSimilarity = calculateVariance(similarities);
+      const authenticityScore = Math.max(0, 100 - varianceInSimilarity);
+      
+      return Math.round(authenticityScore);
+    };
+
+    // Gera análise de valor detalhada
+    const generateValueAnalysis = (scores) => {
+      const { qualityScore, consistencyScore, visualAppealScore, authenticityScore, overallScore } = scores;
+      
+      let valueCategory, valueMultiplier, reasoning;
+      
+      if (overallScore >= 85) {
+        valueCategory = 'Premium';
+        valueMultiplier = 1.15;
+        reasoning = 'Imóvel de alta qualidade com excelente apresentação visual e consistência nas imagens.';
+      } else if (overallScore >= 70) {
+        valueCategory = 'Alto Padrão';
+        valueMultiplier = 1.08;
+        reasoning = 'Imóvel bem apresentado com boa qualidade de imagens e características atrativas.';
+      } else if (overallScore >= 55) {
+        valueCategory = 'Padrão';
+        valueMultiplier = 1.0;
+        reasoning = 'Imóvel com apresentação adequada, sem características que justifiquem premium ou desconto.';
+      } else if (overallScore >= 40) {
+        valueCategory = 'Básico';
+        valueMultiplier = 0.95;
+        reasoning = 'Imóvel com apresentação simples, pode necessitar melhorias na qualidade das imagens.';
+      } else {
+        valueCategory = 'Atenção';
+        valueMultiplier = 0.88;
+        reasoning = 'Imóvel com problemas na apresentação visual que podem impactar negativamente o valor.';
+      }
+      
+      const valueFactors = [];
+      
+      if (qualityScore >= 80) {
+        valueFactors.push({
+          factor: 'Alta Qualidade de Imagem',
+          impact: '+3%',
+          description: 'Imagens de alta resolução e nitidez aumentam a percepção de valor.'
+        });
+      }
+      
+      return {
+        category: valueCategory,
+        multiplier: valueMultiplier,
+        reasoning,
+        factors: valueFactors,
+        confidence: Math.round((qualityScore + consistencyScore + visualAppealScore + authenticityScore) / 4)
+      };
+    };
+
+    // Analisa o valor do imóvel baseado nas características das imagens
+    const analyzePropertyValue = (data) => {
+      const { comparisons, summary } = data;
+      const { bestMatches } = summary;
+      const bestMatch = bestMatches && bestMatches.length > 0 ? bestMatches[0] : null;
+      const averageSimilarity = bestMatch ? bestMatch.similarity.overall : 0;
+      
+      // Calcular scores de diferentes aspectos
+      const qualityScore = calculateQualityScore(comparisons);
+      const consistencyScore = calculateConsistencyScore(comparisons);
+      const visualAppealScore = calculateVisualAppealScore(comparisons);
+      const authenticityScore = calculateAuthenticityScore(comparisons);
+      
+      // Score geral do imóvel
+      const overallScore = (qualityScore + consistencyScore + visualAppealScore + authenticityScore) / 4;
+      
+      // Análise de valor
+      const valueAnalysis = generateValueAnalysis({
+        qualityScore,
+        consistencyScore,
+        visualAppealScore,
+        authenticityScore,
+        overallScore,
+        averageSimilarity,
+        bestMatch
+      });
+      
+      return {
+        report: {
+          timestamp: new Date().toISOString(),
+          propertyId: `PROP_${Date.now()}`,
+          scores: {
+            quality: qualityScore,
+            consistency: consistencyScore,
+            visualAppeal: visualAppealScore,
+            authenticity: authenticityScore,
+            overall: overallScore
+          },
+          metrics: {
+            totalComparisons: comparisons.length,
+            averageSimilarity,
+            bestMatchSimilarity: bestMatch && bestMatch.similarity && bestMatch.similarity.overall ? bestMatch.similarity.overall : 0
+          }
+        },
+        valueComparison: valueAnalysis
+      };
+    };
+
     try {
       console.log('PropertyComparisonReport - Iniciando análise com dados:', data);
       const analysis = analyzePropertyValue(data);
@@ -31,246 +171,19 @@ const PropertyComparisonReport = ({ comparisonData, onExport }) => {
     } catch (error) {
       console.error('PropertyComparisonReport - Erro ao gerar relatório:', error);
     }
-  };
+  }, []);
 
-  // Analisa o valor do imóvel baseado nas características das imagens
-  const analyzePropertyValue = (data) => {
-    const { comparisons, summary } = data;
-    const { bestMatches } = summary;
-    const bestMatch = bestMatches && bestMatches.length > 0 ? bestMatches[0] : null;
-    const averageSimilarity = bestMatch ? bestMatch.similarity.overall : 0;
-    
-    // Calcular scores de diferentes aspectos
-    const qualityScore = calculateQualityScore(comparisons);
-    const consistencyScore = calculateConsistencyScore(comparisons);
-    const visualAppealScore = calculateVisualAppealScore(comparisons);
-    const authenticityScore = calculateAuthenticityScore(comparisons);
-    
-    // Score geral do imóvel
-    const overallScore = (qualityScore + consistencyScore + visualAppealScore + authenticityScore) / 4;
-    
-    // Análise de valor
-    const valueAnalysis = generateValueAnalysis({
-      qualityScore,
-      consistencyScore,
-      visualAppealScore,
-      authenticityScore,
-      overallScore,
-      averageSimilarity,
-      bestMatch
-    });
-    
-    return {
-      report: {
-        timestamp: new Date().toISOString(),
-        propertyId: `PROP_${Date.now()}`,
-        scores: {
-          quality: qualityScore,
-          consistency: consistencyScore,
-          visualAppeal: visualAppealScore,
-          authenticity: authenticityScore,
-          overall: overallScore
-        },
-        metrics: {
-          totalComparisons: comparisons.length,
-          averageSimilarity,
-          bestMatchSimilarity: bestMatch && bestMatch.similarity && bestMatch.similarity.overall ? bestMatch.similarity.overall : 0
-        }
-      },
-      valueComparison: valueAnalysis
-    };
-  };
-
-  // Calcula score de qualidade das imagens
-  const calculateQualityScore = (comparisons) => {
-    if (!comparisons.length) return 0;
-    
-    const avgQuality = comparisons.reduce((sum, comp) => {
-      // Usar qualityComparison que existe na estrutura
-      const qualityScore = comp.qualityComparison ? comp.qualityComparison.overall : 50;
-      return sum + qualityScore;
-    }, 0) / comparisons.length;
-    
-    return Math.round(avgQuality);
-  };
-
-  // Calcula score de consistência
-  const calculateConsistencyScore = (comparisons) => {
-    if (!comparisons.length) return 0;
-    
-    const avgSimilarity = comparisons.reduce((sum, comp) => {
-      const similarity = comp.similarity && comp.similarity.overall ? comp.similarity.overall : 0;
-      return sum + similarity;
-    }, 0) / comparisons.length;
-    return Math.round(avgSimilarity);
-  };
-
-  // Calcula score de apelo visual
-  const calculateVisualAppealScore = (comparisons) => {
-    if (!comparisons.length) return 0;
-    
-    // Usar dados de similaridade como proxy para apelo visual
-    const avgVisualScore = comparisons.reduce((sum, comp) => {
-      const visualScore = comp.similarity && comp.similarity.overall ? comp.similarity.overall : 50;
-      return sum + visualScore;
-    }, 0) / comparisons.length;
-    
-    return Math.round(avgVisualScore);
-  };
-
-  // Calcula score de autenticidade
-  const calculateAuthenticityScore = (comparisons) => {
-    if (!comparisons.length) return 0;
-    
-    // Baseado na consistência entre múltiplas imagens
-    const similarities = comparisons.map(c => {
-      return c.similarity && c.similarity.overall ? c.similarity.overall : 0;
-    });
-    const varianceInSimilarity = calculateVariance(similarities);
-    const authenticityScore = Math.max(0, 100 - varianceInSimilarity);
-    
-    return Math.round(authenticityScore);
-  };
-
-  // Calcula variância
-  const calculateVariance = (values) => {
-    const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
-    const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
-    return Math.sqrt(variance);
-  };
-
-  // Gera análise de valor detalhada
-  const generateValueAnalysis = (scores) => {
-    const { qualityScore, consistencyScore, visualAppealScore, authenticityScore, overallScore } = scores;
-    
-    // Determinar categoria de valor
-    let valueCategory, valueMultiplier, reasoning;
-    
-    if (overallScore >= 85) {
-      valueCategory = 'Premium';
-      valueMultiplier = 1.15;
-      reasoning = 'Imóvel de alta qualidade com excelente apresentação visual e consistência nas imagens.';
-    } else if (overallScore >= 70) {
-      valueCategory = 'Alto Padrão';
-      valueMultiplier = 1.08;
-      reasoning = 'Imóvel bem apresentado com boa qualidade de imagens e características atrativas.';
-    } else if (overallScore >= 55) {
-      valueCategory = 'Padrão';
-      valueMultiplier = 1.0;
-      reasoning = 'Imóvel com apresentação adequada, sem características que justifiquem premium ou desconto.';
-    } else if (overallScore >= 40) {
-      valueCategory = 'Básico';
-      valueMultiplier = 0.95;
-      reasoning = 'Imóvel com apresentação simples, pode necessitar melhorias na qualidade das imagens.';
+  useEffect(() => {
+    console.log('PropertyComparisonReport - comparisonData recebido:', comparisonData);
+    if (comparisonData) {
+      console.log('PropertyComparisonReport - Gerando relatório...');
+      generateReport(comparisonData);
     } else {
-      valueCategory = 'Atenção';
-      valueMultiplier = 0.88;
-      reasoning = 'Imóvel com problemas na apresentação visual que podem impactar negativamente o valor.';
+      console.log('PropertyComparisonReport - Nenhum dado de comparação disponível');
     }
-    
-    // Fatores específicos que influenciam o valor
-    const valueFactors = [];
-    
-    if (qualityScore >= 80) {
-      valueFactors.push({
-        factor: 'Alta Qualidade de Imagem',
-        impact: '+3%',
-        description: 'Imagens de alta resolução e nitidez aumentam a percepção de valor.'
-      });
-    }
-    
-    if (visualAppealScore >= 75) {
-      valueFactors.push({
-        factor: 'Excelente Apelo Visual',
-        impact: '+5%',
-        description: 'Cores vibrantes e boa iluminação tornam o imóvel mais atrativo.'
-      });
-    }
-    
-    if (consistencyScore >= 80) {
-      valueFactors.push({
-        factor: 'Alta Consistência',
-        impact: '+2%',
-        description: 'Imagens consistentes transmitem confiabilidade e profissionalismo.'
-      });
-    }
-    
-    if (authenticityScore < 60) {
-      valueFactors.push({
-        factor: 'Possível Inconsistência',
-        impact: '-5%',
-        description: 'Variações significativas entre imagens podem indicar problemas de autenticidade.'
-      });
-    }
-    
-    if (qualityScore < 50) {
-      valueFactors.push({
-        factor: 'Baixa Qualidade de Imagem',
-        impact: '-8%',
-        description: 'Imagens de baixa qualidade podem reduzir significativamente o interesse.'
-      });
-    }
-    
-    return {
-      category: valueCategory,
-      multiplier: valueMultiplier,
-      reasoning,
-      factors: valueFactors,
-      recommendations: generateRecommendations(scores)
-    };
-  };
+  }, [comparisonData, generateReport]);
 
-  // Gera recomendações específicas
-  const generateRecommendations = (scores) => {
-    const recommendations = [];
-    
-    if (scores.qualityScore < 70) {
-      recommendations.push({
-        type: 'warning',
-        title: 'Melhore a Qualidade das Imagens',
-        description: 'Utilize câmeras de maior resolução e garanta boa iluminação para aumentar o valor percebido.',
-        priority: 'alta'
-      });
-    }
-    
-    if (scores.visualAppealScore < 60) {
-      recommendations.push({
-        type: 'info',
-        title: 'Otimize o Apelo Visual',
-        description: 'Considere melhor enquadramento, cores mais vibrantes e ambientes bem iluminados.',
-        priority: 'média'
-      });
-    }
-    
-    if (scores.consistencyScore < 70) {
-      recommendations.push({
-        type: 'warning',
-        title: 'Padronize as Imagens',
-        description: 'Mantenha consistência no estilo, iluminação e qualidade entre todas as imagens.',
-        priority: 'alta'
-      });
-    }
-    
-    if (scores.authenticityScore < 65) {
-      recommendations.push({
-        type: 'error',
-        title: 'Verifique Autenticidade',
-        description: 'Grandes variações podem indicar uso de imagens não originais ou editadas.',
-        priority: 'crítica'
-      });
-    }
-    
-    if (scores.overallScore >= 80) {
-      recommendations.push({
-        type: 'success',
-        title: 'Excelente Apresentação',
-        description: 'Continue mantendo este padrão de qualidade para maximizar o valor do imóvel.',
-        priority: 'baixa'
-      });
-    }
-    
-    return recommendations;
-  };
+
 
   // Função para exportar relatório
   const handleExport = () => {

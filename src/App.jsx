@@ -25,13 +25,16 @@ import GerenciamentoCreditos from './components/GerenciamentoCreditos';
 import CadastroUsuario from './components/CadastroUsuario';
 import FormasPagamento from './components/FormasPagamento';
 import CustomHeader from './components/CustomHeader';
+import CompleteWorkflow from './components/CompleteWorkflow';
+import DataIntegrityReport from './components/DataIntegrityReport';
 import { ProjectProvider } from './contexts/ProjectContext';
 
 import { appStyles, getSidebarStyles, otherStyles } from './styles/appStyles';
 
 const SaaSApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [_user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [user, setUser] = useState(null);
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showNovoCliente, setShowNovoCliente] = useState(false);
@@ -42,26 +45,33 @@ const SaaSApp = () => {
   const [showAnaliseImagens, setShowAnaliseImagens] = useState(false);
   const [showConfiguracaoLogo, setShowConfiguracaoLogo] = useState(false);
   const [showEdicaoConfiguracoes, setShowEdicaoConfiguracoes] = useState(false);
-  const [_showGerenciamentoCartoes, setShowGerenciamentoCartoes] = useState(false);
   const [tipoEdicaoConfiguracao, setTipoEdicaoConfiguracao] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [dadosNavegacao, setDadosNavegacao] = useState({});
 
   // Verificação de autenticação ao carregar
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    const savedToken = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('saas_user_data');
+    const savedToken = localStorage.getItem('saas_auth_token');
     if (savedUser && savedToken) {
       setUser(JSON.parse(savedUser));
       setIsAuthenticated(true);
     }
+    setAuthLoading(false);
   }, []);
 
-  const handleLogin = useCallback((userData) => {
-    console.log('handleLogin executado com dados:', userData);
+  const handleLogin = (userData, token) => {
+    console.log('handleLogin iniciado com:', userData, token);
+    
+    localStorage.setItem('saas_user_data', JSON.stringify(userData));
+    localStorage.setItem('saas_auth_token', token);
+    
     setUser(userData);
     setIsAuthenticated(true);
-    console.log('Estado de autenticação atualizado para true');
-  }, []);
+    setAuthLoading(false);
+    
+    console.log('Login realizado com sucesso');
+  };
 
   const handleRegister = useCallback((userData) => {
     setUser(userData);
@@ -71,8 +81,8 @@ const SaaSApp = () => {
   const handleLogout = useCallback(() => {
     setIsAuthenticated(false);
     setUser(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
+    localStorage.removeItem('saas_user_data');
+    localStorage.removeItem('saas_auth_token');
     setActiveSection('dashboard');
   }, []);
 
@@ -107,7 +117,7 @@ const SaaSApp = () => {
     star: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon></svg>,
     file: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14,2 14,8 20,8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10,9 9,9 8,9"></polyline></svg>,
     image: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21,15 16,10 5,21"></polyline></svg>,
-    settings: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.79a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>,
+    settings: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.79a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>,
     logout: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16,17 21,12 16,7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>,
     lock: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><circle cx="12" cy="16" r="1"></circle><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>,
     mail: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
@@ -115,6 +125,8 @@ const SaaSApp = () => {
 
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'menu' },
+    { id: 'fluxo-completo', label: 'Fluxo Completo', icon: 'folder' },
+    { id: 'relatorio-integridade', label: 'Relatório de Integridade', icon: 'file' },
     { id: 'cadastro-usuario', label: 'Cadastro de Usuário', icon: 'user' },
     { id: 'cliente', label: 'Cliente', icon: 'user' },
     { id: 'projeto', label: 'Projeto', icon: 'folder' },
@@ -287,6 +299,34 @@ const SaaSApp = () => {
             </>
           );
         
+        case 'fluxo-completo':
+          return (
+            <>
+              <div style={styles.pageHeader}>
+                <h1 style={styles.pageTitle}>Fluxo Completo</h1>
+                <p style={styles.pageSubtitle}>Processo completo do cadastro até o laudo final</p>
+              </div>
+              
+              <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                <CompleteWorkflow />
+              </div>
+            </>
+          );
+        
+        case 'relatorio-integridade':
+          return (
+            <>
+              <div style={styles.pageHeader}>
+                <h1 style={styles.pageTitle}>Relatório de Integridade</h1>
+                <p style={styles.pageSubtitle}>Análise da integridade dos dados do sistema</p>
+              </div>
+              
+              <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                <DataIntegrityReport />
+              </div>
+            </>
+          );
+        
         case 'cadastro-usuario':
           return (
             <>
@@ -297,7 +337,10 @@ const SaaSApp = () => {
               
               <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                 <CadastroUsuario 
-                  onNavigateToPlanos={() => setActiveSection('planos-assinatura')}
+                  onNavigateToPlanos={(dados = {}) => {
+                    setDadosNavegacao(dados);
+                    setActiveSection('planos-assinatura');
+                  }}
                 />
               </div>
             </>
@@ -313,6 +356,7 @@ const SaaSApp = () => {
               
               <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
                 <PlanosAssinatura 
+                  numeroColaboradores={dadosNavegacao.numeroColaboradores || 1}
                   onPlanoSelecionado={(plano) => {
                     setSelectedPlan(plano);
                     setActiveSection('formas-pagamento');
@@ -341,7 +385,6 @@ const SaaSApp = () => {
                   planoSelecionado={selectedPlan}
                   onPagamentoConfigurado={(dadosPagamento) => {
                     console.log('Pagamento configurado:', dadosPagamento);
-                    // Aqui você pode redirecionar para uma página de confirmação
                     setActiveSection('dashboard');
                   }}
                 />
@@ -539,8 +582,6 @@ const SaaSApp = () => {
         case 'analise-imagens':
           return <AIImageAnalysis />;
 
-
-
         case 'pagamento':
           return <PagamentoPagina plano={selectedPlan} onNavigate={(section) => setActiveSection(section)} />;
 
@@ -565,7 +606,7 @@ const SaaSApp = () => {
         case 'cartoes':
           return (
             <GerenciamentoCartoes 
-              onClose={() => setShowGerenciamentoCartoes(false)}
+              onClose={() => setActiveSection('dashboard')}
             />
           );
 
@@ -626,6 +667,16 @@ const SaaSApp = () => {
   };
 
   // Renderização principal
+  console.log('Renderização principal - isAuthenticated:', isAuthenticated, 'authLoading:', authLoading, 'user:', user);
+  
+  if (authLoading) {
+    return (
+      <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh'}}>
+        <div>Carregando...</div>
+      </div>
+    );
+  }
+  
   if (!isAuthenticated) {
     return (
       <div style={styles.appContainer}>
@@ -641,70 +692,66 @@ const SaaSApp = () => {
           <Sidebar />
           <MainContent />
         </div>
-      <NovoCliente
-        isOpen={showNovoCliente}
-        onClose={() => setShowNovoCliente(false)}
-        onClienteCreated={() => {
-          // Callback para atualizar lista de clientes se necessário
-          console.log('Cliente criado com sucesso!');
-        }}
-      />
-      
-      <NovoProjeto
-         isOpen={showNovoProjeto}
-         onClose={() => setShowNovoProjeto(false)}
-         onProjetoCreated={() => {
-           // Callback para atualizar lista de projetos se necessário
-           console.log('Projeto criado com sucesso!');
-         }}
-       />
-       
-       <NovoOrcamento
-         isOpen={showNovoOrcamento}
-         onClose={() => setShowNovoOrcamento(false)}
-         onOrcamentoCreated={() => {
-           // Callback para atualizar lista de orçamentos se necessário
-           console.log('Orçamento criado com sucesso!');
-         }}
-       />
-       
-       <NovoLaudo
+        
+        <NovoCliente
+          isOpen={showNovoCliente}
+          onClose={() => setShowNovoCliente(false)}
+          onClienteCreated={() => {
+            console.log('Cliente criado com sucesso!');
+          }}
+        />
+        
+        <NovoProjeto
+          isOpen={showNovoProjeto}
+          onClose={() => setShowNovoProjeto(false)}
+          onProjetoCreated={() => {
+            console.log('Projeto criado com sucesso!');
+          }}
+        />
+        
+        <NovoOrcamento
+          isOpen={showNovoOrcamento}
+          onClose={() => setShowNovoOrcamento(false)}
+          onOrcamentoCreated={() => {
+            console.log('Orçamento criado com sucesso!');
+          }}
+        />
+        
+        <NovoLaudo
           isOpen={showNovoLaudo}
-         onClose={() => setShowNovoLaudo(false)}
-         onLaudoCreated={() => {
-           // Callback para atualizar lista de laudos se necessário
-           console.log('Laudo criado com sucesso!');
-         }}
-       />
-       
-       <NovaAvaliacao
-         isOpen={showNovaAvaliacao}
-         onClose={() => setShowNovaAvaliacao(false)}
-         onAvaliacaoCreated={() => {
-           setShowNovaAvaliacao(false);
-           // Callback para atualizar lista de avaliações se necessário
-           console.log('Avaliação criada com sucesso!');
-         }}
-       />
-       
-       <PropertyAnalysisSystem
-         visible={showAnaliseImagens}
-         onClose={() => setShowAnaliseImagens(false)}
-       />
-       
-       <ConfiguracaoLogo
-         isOpen={showConfiguracaoLogo}
-         onClose={() => setShowConfiguracaoLogo(false)}
-       />
-       
-       <EdicaoConfiguracoes
-         isOpen={showEdicaoConfiguracoes}
-         onClose={() => {
-           setShowEdicaoConfiguracoes(false);
-           setTipoEdicaoConfiguracao(null);
-         }}
-         tipoConfiguracao={tipoEdicaoConfiguracao}
-       />
+          onClose={() => setShowNovoLaudo(false)}
+          onLaudoCreated={() => {
+            console.log('Laudo criado com sucesso!');
+          }}
+        />
+        
+        <NovaAvaliacao
+          isOpen={showNovaAvaliacao}
+          onClose={() => setShowNovaAvaliacao(false)}
+          onAvaliacaoCreated={() => {
+            setShowNovaAvaliacao(false);
+            console.log('Avaliação criada com sucesso!');
+          }}
+        />
+        
+        <PropertyAnalysisSystem
+          visible={showAnaliseImagens}
+          onClose={() => setShowAnaliseImagens(false)}
+        />
+        
+        <ConfiguracaoLogo
+          isOpen={showConfiguracaoLogo}
+          onClose={() => setShowConfiguracaoLogo(false)}
+        />
+        
+        <EdicaoConfiguracoes
+          isOpen={showEdicaoConfiguracoes}
+          onClose={() => {
+            setShowEdicaoConfiguracoes(false);
+            setTipoEdicaoConfiguracao(null);
+          }}
+          tipoConfiguracao={tipoEdicaoConfiguracao}
+        />
       </div>
     </ProjectProvider>
   );

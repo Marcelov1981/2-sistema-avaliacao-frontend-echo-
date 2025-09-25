@@ -49,5 +49,63 @@
     "status": "ativo",
     "created_at": "2025-09-17T00:09:00.593Z",
     "updated_at": "2025-09-17T00:09:00.593Z"
+  },
+  {
+    "id": "a8f46e2f-68f6-4691-8cc0-2e2d6e7eeab6",
+    "nome": "Teste Usuario",
+    "email": "teste@exemplo.com",
+    "senha": "$2a$10$jjTncTkxD7pHOzxlWhrwpu.HjkkH0VZEHw7Y8ml6k7v.bFCxDXg2i",
+    "telefone": "11999999999",
+    "empresa": "",
+    "cpfCnpj": "",
+    "tipoUsuario": "pessoa_fisica",
+    "razaoSocial": "",
+    "inscricaoEstadual": "",
+    "nomeResponsavel": "",
+    "cargoResponsavel": "",
+    "precisaSubacessos": false,
+    "numeroColaboradores": 0,
+    "endereco": {
+      "cep": "",
+      "endereco": "",
+      "cidade": "",
+      "estado": ""
+    },
+    "plano": "basico",
+    "status": "ativo",
+    "tipo": "individual",
+    "usuarioMatriz": null,
+    "colaboradores": [],
+    "created_at": "2025-09-18T09:17:26.170Z",
+    "updated_at": "2025-09-18T09:17:26.171Z"
+  },
+  {
+    "id": "b0d3062b-544c-48d5-866a-7388a68c357e",
+    "nome": "marcelo de vasconcelos",
+    "email": "teste@mail.com",
+    "senha": "$2a$10$ahhv0JYQj9dPf/bSiD2v7ei3ZwmN2vznwNwpCMwHm2pQqojEdkxFK",
+    "telefone": "51999021281",
+    "empresa": "",
+    "cpfCnpj": "",
+    "tipoUsuario": "pessoa_fisica",
+    "razaoSocial": "",
+    "inscricaoEstadual": "",
+    "nomeResponsavel": "",
+    "cargoResponsavel": "",
+    "precisaSubacessos": false,
+    "numeroColaboradores": 1,
+    "endereco": {
+      "cep": "91180-130",
+      "endereco": "Rua Vicente Celestino",
+      "cidade": "Porto Alegre",
+      "estado": "RS"
+    },
+    "plano": "basico",
+    "status": "ativo",
+    "tipo": "individual",
+    "usuarioMatriz": null,
+    "colaboradores": [],
+    "created_at": "2025-09-18T09:24:38.972Z",
+    "updated_at": "2025-09-18T09:24:38.972Z"
   }
 ]

@@ -73,7 +73,7 @@ router.get('/', authenticateToken, auditMiddleware('READ', 'orcamentos'), (req, 
   try {
     const orcamentos = readData();
     // Filtrar orçamentos do usuário logado
-    const orcamentosUsuario = orcamentos.filter(o => o.usuarioId === req.user.id);
+    const orcamentosUsuario = orcamentos.filter(o => o.usuario_id === req.user.id);
     res.json({
       success: true,
       data: orcamentosUsuario
@@ -91,7 +91,7 @@ router.get('/', authenticateToken, auditMiddleware('READ', 'orcamentos'), (req, 
 router.get('/:id', authenticateToken, auditMiddleware('READ', 'orcamentos'), (req, res) => {
   try {
     const orcamentos = readData();
-    const orcamento = orcamentos.find(o => o.id === req.params.id && o.usuarioId === req.user.id);
+    const orcamento = orcamentos.find(o => o.id === req.params.id && o.usuario_id === req.user.id);
     
     if (!orcamento) {
       return res.status(404).json({ 
@@ -120,7 +120,7 @@ router.post('/', authenticateToken, auditMiddleware('CREATE', 'orcamentos'), (re
     const novoOrcamento = {
       id: Date.now().toString(),
       ...req.body,
-      usuarioId: req.user.id, // Associar ao usuário logado
+      usuario_id: req.user.id, // Associar ao usuário logado
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -152,7 +152,7 @@ router.post('/', authenticateToken, auditMiddleware('CREATE', 'orcamentos'), (re
 router.put('/:id', authenticateToken, auditMiddleware('UPDATE', 'orcamentos'), (req, res) => {
   try {
     const orcamentos = readData();
-    const index = orcamentos.findIndex(o => o.id === req.params.id && o.usuarioId === req.user.id);
+    const index = orcamentos.findIndex(o => o.id === req.params.id && o.usuario_id === req.user.id);
     
     if (index === -1) {
       return res.status(404).json({ 
@@ -164,7 +164,7 @@ router.put('/:id', authenticateToken, auditMiddleware('UPDATE', 'orcamentos'), (
     orcamentos[index] = {
       ...orcamentos[index],
       ...req.body,
-      usuarioId: req.user.id, // Manter associação ao usuário
+      usuario_id: req.user.id, // Manter associação ao usuário
       updatedAt: new Date().toISOString()
     };
     

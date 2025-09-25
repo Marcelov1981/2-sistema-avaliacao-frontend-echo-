@@ -1,8 +1,9 @@
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api.js';
 
 class AuthService {
   constructor() {
-    this.baseURL = 'http://localhost:3001/api/v1';
+    this.baseURL = API_BASE_URL;
     this.tokenKey = 'saas_auth_token';
     this.userKey = 'saas_user_data';
     

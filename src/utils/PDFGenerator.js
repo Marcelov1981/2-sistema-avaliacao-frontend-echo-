@@ -219,7 +219,7 @@ class PDFGenerator {
     if (analysisData.timestamp) {
       this.addSection('INFORMAÇÕES TÉCNICAS', 
         `Análise realizada em: ${new Date(analysisData.timestamp).toLocaleString('pt-BR')}\n` +
-        `Modelo de IA utilizado: Google Gemini 1.5 Flash\n` +
+        `Modelo de IA utilizado: IA Personalizada GeoMind (Multi-Provider)\n` +
         `Versão do sistema: 1.0.0`
       );
     }
@@ -267,7 +267,7 @@ class PDFGenerator {
     if (comparisonData.timestamp) {
       this.addSection('INFORMAÇÕES TÉCNICAS', 
         `Comparação realizada em: ${new Date(comparisonData.timestamp).toLocaleString('pt-BR')}\n` +
-        `Modelo de IA utilizado: Google Gemini Pro Vision\n` +
+        `Modelo de IA utilizado: IA Personalizada GeoMind com Análise Geoespacial\n` +
         `Tipo de análise: Comparação de autenticidade de propriedades\n` +
         `Versão do sistema: 1.0.0`
       );
@@ -309,4 +309,4 @@ class PDFGenerator {
 
 }
 
-export default new PDFGenerator();
+export default PDFGenerator;

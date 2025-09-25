@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Row, Col, Typography, Progress, Button, Space, Statistic, List, Tag, Alert, Divider } from 'antd';
 import { 
   CrownOutlined, 
@@ -32,11 +32,7 @@ const DashboardAssinatura = ({ onNavigate }) => {
   const [alertas, setAlertas] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    carregarDados();
-  }, []);
-
-  const carregarDados = async () => {
+  const carregarDados = useCallback(async () => {
     try {
       // Carregar informações do plano
       const info = obterInfoPlano();
@@ -64,7 +60,11 @@ const DashboardAssinatura = ({ onNavigate }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    carregarDados();
+  }, [carregarDados]);
 
   const gerarAlertas = (info, limites, stats) => {
     const novosAlertas = [];

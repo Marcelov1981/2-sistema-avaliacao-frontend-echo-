@@ -3,25 +3,36 @@ import { Card, Form, Input, Button, Typography, Tabs, message, Checkbox, Divider
 import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, IdcardOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
+import PrimeiroLogin from './PrimeiroLogin';
 
 const { Title, Text, Link } = Typography;
-const { TabPane } = Tabs;
 
 const Autenticacao = ({ onLogin, onRegister }) => {
   const [loginForm] = Form.useForm();
   const [registerForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
+  const [primeiroLogin, setPrimeiroLogin] = useState(null);
 
   const handleLogin = async (values) => {
     setLoading(true);
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/v1/usuarios/login`, {
+      const response = await axios.post(`${API_BASE_URL}/usuarios/login`, {
         email: values.email,
         senha: values.password
       });
       
       if (response.data && response.data.success) {
+        // Verificar se é primeiro login
+        if (response.data.primeiroLogin) {
+          setPrimeiroLogin({
+            userId: response.data.userId,
+            email: values.email
+          });
+          message.info('Primeiro acesso detectado. Altere sua senha para continuar.');
+          return;
+        }
+
         const userData = {
           id: response.data.usuario.id,
           email: response.data.usuario.email,
@@ -32,32 +43,62 @@ const Autenticacao = ({ onLogin, onRegister }) => {
         };
         
         // Salvar no localStorage
-        localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('token', userData.token);
+        localStorage.setItem('saas_user_data', JSON.stringify(userData));
+        localStorage.setItem('saas_auth_token', userData.token);
         
         message.success('Login realizado com sucesso!');
         
-        console.log('Login bem-sucedido, dados do usuário:', userData);
-        console.log('Callback onLogin disponível:', !!onLogin);
-        
         if (onLogin) {
-          console.log('Executando callback onLogin...');
           onLogin(userData);
-        } else {
-          console.error('Callback onLogin não foi fornecido!');
         }
       } else {
         message.error('Credenciais inválidas.');
       }
     } catch (error) {
-      if (error.response?.status === 401) {
-        message.error('Email ou senha incorretos.');
+      if (error.response) {
+        // Erro de resposta do servidor
+        if (error.response.status === 401) {
+          message.error('Email ou senha incorretos.');
+        } else {
+          message.error(error.response.data?.message || 'Erro ao fazer login. Verifique suas credenciais.');
+        }
+      } else if (error.request) {
+        // Erro de rede
+        message.error('Erro de conexão. Verifique sua internet e tente novamente.');
       } else {
-        message.error('Erro ao fazer login. Tente novamente.');
+        // Outro tipo de erro
+        message.error('Erro inesperado. Tente novamente.');
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePrimeiroLoginSuccess = (usuario, token) => {
+    const userData = {
+      id: usuario.id,
+      email: usuario.email,
+      nome: usuario.nome,
+      plano: usuario.plano || null,
+      dataLogin: new Date().toISOString(),
+      token: token
+    };
+    
+    // Salvar no localStorage
+    localStorage.setItem('saas_user_data', JSON.stringify(userData));
+    localStorage.setItem('saas_auth_token', token);
+    
+    message.success('Senha alterada e login realizado com sucesso!');
+    setPrimeiroLogin(null);
+    
+    if (onLogin) {
+      onLogin(userData);
+    }
+  };
+
+  const handleCancelarPrimeiroLogin = () => {
+    setPrimeiroLogin(null);
+    message.info('Login cancelado. Tente novamente.');
   };
 
   const handleRegister = async (values) => {
@@ -74,7 +115,7 @@ const Autenticacao = ({ onLogin, onRegister }) => {
       };
       console.log('Dados que serão enviados:', dadosEnvio);
       
-      const response = await axios.post(`${API_BASE_URL}/api/v1/usuarios/registro`, dadosEnvio);
+      const response = await axios.post(`${API_BASE_URL}/usuarios/registro`, dadosEnvio);
       
       if (response.data && response.data.success) {
         const userData = {
@@ -91,7 +132,7 @@ const Autenticacao = ({ onLogin, onRegister }) => {
         
         // Salvar no localStorage
         localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('token', userData.token);
+        localStorage.setItem('saas_auth_token', userData.token);
         
         message.success('Cadastro realizado com sucesso!');
         
@@ -154,6 +195,8 @@ const Autenticacao = ({ onLogin, onRegister }) => {
     }
   };
 
+
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -161,8 +204,10 @@ const Autenticacao = ({ onLogin, onRegister }) => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '20px'
+      padding: '20px',
+      position: 'relative'
     }}>
+
       <Card
         style={{
           width: '100%',
@@ -170,7 +215,7 @@ const Autenticacao = ({ onLogin, onRegister }) => {
           boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
           borderRadius: '12px'
         }}
-        bodyStyle={{ padding: '40px' }}
+        styles={{ body: { padding: '40px' } }}
       >
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
           <Title level={2} style={{ color: '#1890ff', marginBottom: '8px' }}>
@@ -184,8 +229,11 @@ const Autenticacao = ({ onLogin, onRegister }) => {
           onChange={setActiveTab}
           centered
           style={{ marginBottom: '20px' }}
-        >
-          <TabPane tab="Entrar" key="login">
+          items={[
+            {
+              key: 'login',
+              label: 'Entrar',
+              children: (
             <Form
               form={loginForm}
               name="login"
@@ -240,9 +288,12 @@ const Autenticacao = ({ onLogin, onRegister }) => {
                 </Button>
               </Form.Item>
             </Form>
-          </TabPane>
-
-          <TabPane tab="Cadastrar" key="register">
+              )
+            },
+            {
+              key: 'register',
+              label: 'Cadastrar',
+              children: (
             <Form
               form={registerForm}
               name="register"
@@ -375,8 +426,10 @@ const Autenticacao = ({ onLogin, onRegister }) => {
                 </Button>
               </Form.Item>
             </Form>
-          </TabPane>
-        </Tabs>
+              )
+            }
+          ]}
+        />
 
         <Divider />
         
@@ -386,6 +439,14 @@ const Autenticacao = ({ onLogin, onRegister }) => {
           </Text>
         </div>
       </Card>
+      
+      {primeiroLogin && (
+        <PrimeiroLogin
+          userId={primeiroLogin.userId}
+          onLoginSuccess={handlePrimeiroLoginSuccess}
+          onCancel={handleCancelarPrimeiroLogin}
+        />
+      )}
     </div>
   );
 };

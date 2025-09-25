@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Upload, Button, Card, Row, Col, Slider, Select, message, Space, Typography, Image, Switch } from 'antd';
 import { UploadOutlined, DeleteOutlined, EyeOutlined, SaveOutlined } from '@ant-design/icons';
 import { API_BASE_URL } from '../config/api';
+import { getLogoConfig, invalidateLogoCache } from '../utils/LogoUtils';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -25,41 +26,25 @@ const ConfiguracaoLogo = ({ isOpen, onClose }) => {
 
   const loadLogoConfig = async () => {
     try {
-      const token = localStorage.getItem('token');
-      // Só faz requisição se estiver autenticado e o backend estiver disponível (não for placeholder)
-      if (token && API_BASE_URL.includes('localhost:3001') && !API_BASE_URL.includes('your-backend-url.com')) {
-        const response = await fetch(`${API_BASE_URL}/api/v1/configuracoes/logo`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.data) {
-            setLogoConfig(data.data);
-            // Salvar no localStorage como backup
-            Object.keys(data.data).forEach(key => {
-              localStorage.setItem(key, data.data[key].toString());
-            });
-            return;
-          }
-        }
-      }
-    } catch {
-      console.log('Carregando configurações do localStorage');
+      const config = await getLogoConfig();
+      setLogoConfig(config);
+      // Salvar no localStorage como backup
+      Object.keys(config).forEach(key => {
+        localStorage.setItem(key, config[key].toString());
+      });
+    } catch (error) {
+      console.log('Erro ao carregar configurações:', error.message);
+      // Fallback para configuração padrão
+      const defaultConfig = {
+        logoUrl: '',
+        logoSize: 100,
+        logoPosition: 'top-right',
+        logoOpacity: 100,
+        showInPages: true,
+        showInReports: true
+      };
+      setLogoConfig(defaultConfig);
     }
-    
-    // Fallback para localStorage
-    const savedConfig = {
-      logoUrl: localStorage.getItem('logoUrl') || '',
-      logoSize: parseInt(localStorage.getItem('logoSize')) || 100,
-      logoPosition: localStorage.getItem('logoPosition') || 'top-right',
-      logoOpacity: parseInt(localStorage.getItem('logoOpacity')) || 100,
-      showInPages: localStorage.getItem('showInPages') !== 'false',
-      showInReports: localStorage.getItem('showInReports') !== 'false'
-    };
-    setLogoConfig(savedConfig);
   };
 
   const handleUpload = (file) => {
@@ -105,10 +90,10 @@ const ConfiguracaoLogo = ({ isOpen, onClose }) => {
   const saveLogoConfig = async () => {
     setSaving(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('saas_auth_token');
       // Só faz requisição se estiver autenticado e o backend estiver disponível (não for placeholder)
       if (token && API_BASE_URL.includes('localhost:3001') && !API_BASE_URL.includes('your-backend-url.com')) {
-        const response = await fetch(`${API_BASE_URL}/api/v1/configuracoes/logo`, {
+        const response = await fetch(`${API_BASE_URL}/configuracoes/logo`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -118,6 +103,8 @@ const ConfiguracaoLogo = ({ isOpen, onClose }) => {
         });
         
         if (response.ok) {
+          // Invalidar cache após salvar
+          invalidateLogoCache();
           message.success('Configurações de logo salvas com sucesso!');
         } else {
           throw new Error('Erro ao salvar configurações');

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import axios from 'axios';
-import { API_ENDPOINTS } from '../config/api';
+import { API_ENDPOINTS, getAuthHeaders } from '../config/api';
 import { addLogoToPDF } from '../utils/LogoUtils.jsx';
 
 const LaudoPDF = ({ avaliacao, onClose }) => {
@@ -9,20 +9,137 @@ const LaudoPDF = ({ avaliacao, onClose }) => {
     numeroLaudo: '',
     dataEmissao: new Date().toISOString().split('T')[0],
     responsavelTecnico: '',
-    registroProfissional: '',
     tipoRegistro: 'CREA',
-    assinatura: '',
-    observacoesFinais: ''
+    registroProfissional: '',
+    observacoesFinais: '',
+    incluirImagens: true,
+    imagensDescritivas: [],
+    imagensComparativas: [],
+    selecaoAutomatica: true
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [userLoading, setUserLoading] = useState(true);
+
+  // Carregar dados do usuário logado
+  useEffect(() => {
+    const carregarDadosUsuario = async () => {
+      try {
+        const response = await axios.get(API_ENDPOINTS.usuarios.profile, {
+          headers: getAuthHeaders()
+        });
+        
+        const usuario = response.data.user;
+        if (usuario) {
+          setLaudoData(prev => ({
+            ...prev,
+            responsavelTecnico: usuario.nome || '',
+            registroProfissional: usuario.registroProfissional || '',
+            tipoRegistro: usuario.tipoRegistro || 'CREA'
+          }));
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados do usuário:', error);
+      } finally {
+        setUserLoading(false);
+      }
+    };
+
+    carregarDadosUsuario();
+  }, []);
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setLaudoData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  const handleImageUpload = (event, tipo) => {
+    const files = Array.from(event.target.files);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    if (imageFiles.length !== files.length) {
+      setError('Apenas arquivos de imagem são permitidos.');
+      return;
+    }
+    
+    setLaudoData(prev => ({
+      ...prev,
+      [tipo]: [...prev[tipo], ...imageFiles]
+    }));
+    setError('');
+  };
+
+  const removeImage = (index, tipo) => {
+    setLaudoData(prev => ({
+      ...prev,
+      [tipo]: prev[tipo].filter((_, i) => i !== index)
+    }));
+  };
+
+  const selectBestImages = (images, maxCount = 3) => {
+    // Algoritmo simples para selecionar as melhores imagens baseado no tamanho
+    return images
+      .sort((a, b) => b.size - a.size) // Ordena por tamanho (maior = melhor qualidade)
+      .slice(0, maxCount);
+  };
+
+  const incluirImagensNoPDF = async (doc, images, startY, tipoImagem) => {
+    let yPosition = startY;
+    const margin = 20;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const imageWidth = (pageWidth - 3 * margin) / 2; // 2 imagens por linha
+    const imageHeight = 80;
+    
+    for (let i = 0; i < images.length; i++) {
+      const image = images[i];
+      
+      // Verificar se precisa de nova página
+      if (yPosition + imageHeight + 30 > 280) {
+        doc.addPage();
+        yPosition = margin + 20;
+      }
+      
+      // Calcular posição (2 imagens por linha)
+       const col = i % 2;
+       const xPosition = margin + col * (imageWidth + margin);
+       
+       try {
+         // Converter imagem para base64
+         const reader = new FileReader();
+         const imageData = await new Promise((resolve) => {
+           reader.onload = (e) => resolve(e.target.result);
+           reader.readAsDataURL(image);
+         });
+         
+         // Adicionar imagem
+         doc.addImage(imageData, 'JPEG', xPosition, yPosition, imageWidth, imageHeight);
+         
+         // Adicionar legenda
+         doc.setFontSize(9);
+         doc.setFont('helvetica', 'normal');
+         const legenda = `${tipoImagem} ${i + 1}: ${image.name}`;
+         const legendaLines = doc.splitTextToSize(legenda, imageWidth);
+         doc.text(legendaLines, xPosition, yPosition + imageHeight + 8);
+         
+       } catch (error) {
+         console.error('Erro ao processar imagem:', error);
+         // Adicionar placeholder em caso de erro
+         doc.setDrawColor(200, 200, 200);
+         doc.rect(xPosition, yPosition, imageWidth, imageHeight);
+         doc.setFontSize(10);
+         doc.text('Erro ao carregar imagem', xPosition + 10, yPosition + imageHeight/2);
+       }
+       
+       // Avançar posição Y apenas a cada 2 imagens
+       if (col === 1 || i === images.length - 1) {
+         yPosition += imageHeight + 25;
+       }
+    }
+    
+    return yPosition;
   };
 
   const gerarPDF = async () => {
@@ -137,6 +254,45 @@ const LaudoPDF = ({ avaliacao, onClose }) => {
         yPosition += obsFinais.length * 6 + 20;
       }
 
+      // Incluir imagens se selecionado
+      if (laudoData.incluirImagens) {
+        // Imagens descritivas
+        if (laudoData.imagensDescritivas.length > 0) {
+          // Nova página para imagens
+          doc.addPage();
+          yPosition = margin + 20;
+          
+          doc.setFontSize(16);
+          doc.setFont('helvetica', 'bold');
+          doc.text('DOCUMENTAÇÃO FOTOGRÁFICA - PARTE DESCRITIVA', margin, yPosition);
+          yPosition += 20;
+          
+          const imagensParaIncluir = laudoData.selecaoAutomatica && laudoData.imagensDescritivas.length > 3
+            ? selectBestImages(laudoData.imagensDescritivas, 3)
+            : laudoData.imagensDescritivas;
+          
+          await incluirImagensNoPDF(doc, imagensParaIncluir, yPosition, 'Imagem Descritiva');
+        }
+        
+        // Imagens comparativas
+        if (laudoData.imagensComparativas.length > 0) {
+          // Nova página para imagens comparativas
+          doc.addPage();
+          yPosition = margin + 20;
+          
+          doc.setFontSize(16);
+          doc.setFont('helvetica', 'bold');
+          doc.text('DOCUMENTAÇÃO FOTOGRÁFICA - PARTE COMPARATIVA', margin, yPosition);
+          yPosition += 20;
+          
+          const imagensParaIncluir = laudoData.selecaoAutomatica && laudoData.imagensComparativas.length > 3
+            ? selectBestImages(laudoData.imagensComparativas, 3)
+            : laudoData.imagensComparativas;
+          
+          await incluirImagensNoPDF(doc, imagensParaIncluir, yPosition, 'Imagem Comparativa');
+        }
+      }
+
       // Verificar se precisa de nova página
       if (yPosition > 250) {
         doc.addPage();
@@ -154,16 +310,43 @@ const LaudoPDF = ({ avaliacao, onClose }) => {
       doc.text(`Nome: ${laudoData.responsavelTecnico}`, margin, yPosition);
       yPosition += 8;
       doc.text(`${laudoData.tipoRegistro}: ${laudoData.registroProfissional}`, margin, yPosition);
-      yPosition += 20;
+      yPosition += 25;
 
-      // Linha para assinatura
-      doc.line(margin, yPosition, pageWidth / 2, yPosition);
-      yPosition += 8;
-      doc.text('Assinatura do Responsável Técnico', margin, yPosition);
-
-      // Data de emissão no rodapé
-      yPosition += 20;
-      doc.text(`${avaliacao.orcamento?.projeto?.cliente?.cidade || 'Cidade'}, ${new Date(laudoData.dataEmissao).toLocaleDateString('pt-BR')}`, margin, yPosition);
+      // Espaço para assinatura mais profissional
+      const assinaturaWidth = 120;
+      const assinaturaX = margin;
+      
+      // Retângulo para assinatura
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.5);
+      doc.rect(assinaturaX, yPosition, assinaturaWidth, 30);
+      
+      // Linha para assinatura dentro do retângulo
+      doc.line(assinaturaX + 10, yPosition + 20, assinaturaX + assinaturaWidth - 10, yPosition + 20);
+      
+      // Texto da assinatura
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Assinatura do Responsável Técnico', assinaturaX + 10, yPosition + 27);
+      
+      // Data e local no lado direito
+      const dataX = assinaturaX + assinaturaWidth + 20;
+      doc.text(`Local: ${avaliacao.orcamento?.projeto?.cliente?.cidade || '_________________'}`, dataX, yPosition + 10);
+      doc.text(`Data: ${new Date(laudoData.dataEmissao).toLocaleDateString('pt-BR')}`, dataX, yPosition + 20);
+      
+      yPosition += 40;
+      
+      // Carimbo profissional
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('CARIMBO PROFISSIONAL:', margin, yPosition);
+      yPosition += 5;
+      
+      // Retângulo para carimbo
+      doc.rect(margin, yPosition, 80, 25);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('(Espaço reservado para carimbo)', margin + 5, yPosition + 15);
 
       // Salvar o PDF
       const fileName = `Laudo_${laudoData.numeroLaudo}_${avaliacao.orcamento?.projeto?.nome?.replace(/\s+/g, '_') || 'Projeto'}.pdf`;
@@ -367,6 +550,12 @@ const LaudoPDF = ({ avaliacao, onClose }) => {
         )}
 
         <form onSubmit={handleSubmit} style={styles.form}>
+          {userLoading && (
+            <div style={{...styles.error, backgroundColor: '#f0f9ff', color: '#0369a1'}}>
+              Carregando dados do usuário...
+            </div>
+          )}
+          
           <div style={styles.formGroup}>
             <label style={styles.label}>Número do Laudo *</label>
             <input
@@ -445,6 +634,108 @@ const LaudoPDF = ({ avaliacao, onClose }) => {
               placeholder="Observações adicionais para o laudo final..."
             />
           </div>
+
+          <div style={styles.formGroup}>
+            <label style={styles.label}>
+              <input
+                type="checkbox"
+                name="incluirImagens"
+                checked={laudoData.incluirImagens}
+                onChange={handleInputChange}
+                style={{marginRight: '8px'}}
+              />
+              Incluir imagens no laudo
+            </label>
+          </div>
+
+          {laudoData.incluirImagens && (
+            <>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>
+                  <input
+                    type="checkbox"
+                    name="selecaoAutomatica"
+                    checked={laudoData.selecaoAutomatica}
+                    onChange={handleInputChange}
+                    style={{marginRight: '8px'}}
+                  />
+                  Seleção automática das melhores imagens
+                </label>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Imagens Descritivas</label>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e, 'imagensDescritivas')}
+                  style={styles.input}
+                />
+                {laudoData.imagensDescritivas.length > 0 && (
+                  <div style={{marginTop: '10px'}}>
+                    <p style={{fontSize: '12px', color: '#666'}}>
+                      {laudoData.imagensDescritivas.length} imagem(ns) selecionada(s)
+                      {laudoData.selecaoAutomatica && laudoData.imagensDescritivas.length > 3 && 
+                        ' (3 melhores serão selecionadas automaticamente)'}
+                    </p>
+                    <div style={{display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '5px'}}>
+                      {laudoData.imagensDescritivas.map((img, index) => (
+                        <div key={index} style={{position: 'relative', display: 'inline-block'}}>
+                          <span style={{fontSize: '10px', padding: '2px 6px', backgroundColor: '#f0f0f0', borderRadius: '3px'}}>
+                            {img.name.substring(0, 15)}...
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index, 'imagensDescritivas')}
+                            style={{marginLeft: '5px', fontSize: '10px', color: 'red', background: 'none', border: 'none', cursor: 'pointer'}}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Imagens Comparativas</label>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e, 'imagensComparativas')}
+                  style={styles.input}
+                />
+                {laudoData.imagensComparativas.length > 0 && (
+                  <div style={{marginTop: '10px'}}>
+                    <p style={{fontSize: '12px', color: '#666'}}>
+                      {laudoData.imagensComparativas.length} imagem(ns) selecionada(s)
+                      {laudoData.selecaoAutomatica && laudoData.imagensComparativas.length > 3 && 
+                        ' (3 melhores serão selecionadas automaticamente)'}
+                    </p>
+                    <div style={{display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '5px'}}>
+                      {laudoData.imagensComparativas.map((img, index) => (
+                        <div key={index} style={{position: 'relative', display: 'inline-block'}}>
+                          <span style={{fontSize: '10px', padding: '2px 6px', backgroundColor: '#f0f0f0', borderRadius: '3px'}}>
+                            {img.name.substring(0, 15)}...
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index, 'imagensComparativas')}
+                            style={{marginLeft: '5px', fontSize: '10px', color: 'red', background: 'none', border: 'none', cursor: 'pointer'}}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
 
           <div style={styles.buttonGroup}>
             <button

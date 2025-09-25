@@ -67,7 +67,7 @@ router.get('/', authenticateToken, auditMiddleware('READ', 'avaliacoes'), (req, 
   try {
     const avaliacoes = readData();
     // Filtrar avaliações do usuário logado
-    const avaliacoesUsuario = avaliacoes.filter(a => a.usuarioId === req.user.id);
+    const avaliacoesUsuario = avaliacoes.filter(a => a.usuario_id === req.user.id);
     res.json({
       success: true,
       data: avaliacoesUsuario
@@ -85,7 +85,7 @@ router.get('/', authenticateToken, auditMiddleware('READ', 'avaliacoes'), (req, 
 router.get('/:id', authenticateToken, auditMiddleware('READ', 'avaliacoes'), (req, res) => {
   try {
     const avaliacoes = readData();
-    const avaliacao = avaliacoes.find(a => a.id === req.params.id && a.usuarioId === req.user.id);
+    const avaliacao = avaliacoes.find(a => a.id === req.params.id && a.usuario_id === req.user.id);
     
     if (!avaliacao) {
       return res.status(404).json({ 
@@ -130,7 +130,7 @@ router.post('/', authenticateToken, auditMiddleware('CREATE', 'avaliacoes'), (re
     const avaliacoes = readData();
     const novaAvaliacao = {
       id: uuidv4(),
-      usuarioId: req.user.id,
+      usuario_id: req.user.id,
       orcamentoId,
       dataAvaliacao,
       metodologia,
@@ -162,7 +162,7 @@ router.post('/', authenticateToken, auditMiddleware('CREATE', 'avaliacoes'), (re
 router.put('/:id', authenticateToken, auditMiddleware('UPDATE', 'avaliacoes'), (req, res) => {
   try {
     const avaliacoes = readData();
-    const index = avaliacoes.findIndex(a => a.id === req.params.id && a.usuarioId === req.user.id);
+    const index = avaliacoes.findIndex(a => a.id === req.params.id && a.usuario_id === req.user.id);
     
     if (index === -1) {
       return res.status(404).json({ 
@@ -213,7 +213,7 @@ router.put('/:id', authenticateToken, auditMiddleware('UPDATE', 'avaliacoes'), (
 router.delete('/:id', authenticateToken, auditMiddleware('DELETE', 'avaliacoes'), (req, res) => {
   try {
     const avaliacoes = readData();
-    const index = avaliacoes.findIndex(a => a.id === req.params.id && a.usuarioId === req.user.id);
+    const index = avaliacoes.findIndex(a => a.id === req.params.id && a.usuario_id === req.user.id);
     
     if (index === -1) {
       return res.status(404).json({ 
