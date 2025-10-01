@@ -30,71 +30,71 @@ export { API_BASE_URL_EXPORT as API_BASE_URL };
 export const API_ENDPOINTS = {
   // Configurações
   configuracoes: {
-    base: `${API_BASE_URL}/configuracoes`,
-    geral: `${API_BASE_URL}/configuracoes/geral`,
-    logo: `${API_BASE_URL}/configuracoes/logo`,
+    base: `${API_BASE_URL}/api/v1/configuracoes`,
+    geral: `${API_BASE_URL}/api/v1/configuracoes/geral`,
+    logo: `${API_BASE_URL}/api/v1/configuracoes/logo`,
   },
 
   // Usuários
   usuarios: {
-    base: `${API_BASE_URL}/usuarios`,
-    register: `${API_BASE_URL}/usuarios/register`,
-    login: `${API_BASE_URL}/usuarios/login`,
-    profile: `${API_BASE_URL}/usuarios/perfil`,
-    updatePassword: `${API_BASE_URL}/usuarios/senha`,
-    primeiroLogin: `${API_BASE_URL}/usuarios/primeiro-login`,
-    colaborador: `${API_BASE_URL}/usuarios/colaborador`,
-    colaboradores: `${API_BASE_URL}/usuarios/colaboradores`,
+    base: `${API_BASE_URL}/api/v1/usuarios`,
+    register: `${API_BASE_URL}/api/v1/usuarios/register`,
+    login: `${API_BASE_URL}/api/v1/usuarios/login`,
+    profile: `${API_BASE_URL}/api/v1/usuarios/perfil`,
+    updatePassword: `${API_BASE_URL}/api/v1/usuarios/senha`,
+    primeiroLogin: `${API_BASE_URL}/api/v1/usuarios/primeiro-login`,
+    colaborador: `${API_BASE_URL}/api/v1/usuarios/colaborador`,
+    colaboradores: `${API_BASE_URL}/api/v1/usuarios/colaboradores`,
   },
   
   // Backup
   backup: {
-    base: `${API_BASE_URL}/backup`,
-    create: `${API_BASE_URL}/backup`,
-    list: `${API_BASE_URL}/backup`,
-    restore: (id) => `${API_BASE_URL}/backup/${id}/restore`,
-    delete: (id) => `${API_BASE_URL}/backup/${id}`,
-    autoConfig: `${API_BASE_URL}/backup/auto-config`,
-    cleanup: `${API_BASE_URL}/backup/cleanup`,
+    base: `${API_BASE_URL}/api/v1/backup`,
+    create: `${API_BASE_URL}/api/v1/backup`,
+    list: `${API_BASE_URL}/api/v1/backup`,
+    restore: (id) => `${API_BASE_URL}/api/v1/backup/${id}/restore`,
+    delete: (id) => `${API_BASE_URL}/api/v1/backup/${id}`,
+    autoConfig: `${API_BASE_URL}/api/v1/backup/auto-config`,
+    cleanup: `${API_BASE_URL}/api/v1/backup/cleanup`,
   },
   
   // Integrações
   integracoes: {
-    base: `${API_BASE_URL}/integracoes`,
-    apis: `${API_BASE_URL}/integracoes/apis`,
-    webhooks: `${API_BASE_URL}/integracoes/webhooks`,
-    test: `${API_BASE_URL}/integracoes/test`,
-    logs: `${API_BASE_URL}/integracoes/logs`,
+    base: `${API_BASE_URL}/api/v1/integracoes`,
+    apis: `${API_BASE_URL}/api/v1/integracoes/apis`,
+    webhooks: `${API_BASE_URL}/api/v1/integracoes/webhooks`,
+    test: `${API_BASE_URL}/api/v1/integracoes/test`,
+    logs: `${API_BASE_URL}/api/v1/integracoes/logs`,
   },
   
   // Orçamentos
   orcamentos: {
-    base: `${API_BASE_URL}/orcamentos`,
-    byId: (id) => `${API_BASE_URL}/orcamentos/${id}`,
+    base: `${API_BASE_URL}/api/v1/orcamentos`,
+    byId: (id) => `${API_BASE_URL}/api/v1/orcamentos/${id}`,
   },
   
   // Laudos
   laudos: {
-    base: `${API_BASE_URL}/laudos`,
-    byId: (id) => `${API_BASE_URL}/laudos/${id}`,
+    base: `${API_BASE_URL}/api/v1/laudos`,
+    byId: (id) => `${API_BASE_URL}/api/v1/laudos/${id}`,
   },
   
   // Avaliações
   avaliacoes: {
-    base: `${API_BASE_URL}/avaliacoes`,
-    byId: (id) => `${API_BASE_URL}/avaliacoes/${id}`,
+    base: `${API_BASE_URL}/api/v1/avaliacoes`,
+    byId: (id) => `${API_BASE_URL}/api/v1/avaliacoes/${id}`,
   },
   
   // Clientes
   clientes: {
-    base: `${API_BASE_URL}/clientes`,
-    byId: (id) => `${API_BASE_URL}/clientes/${id}`,
+    base: `${API_BASE_URL}/api/v1/clientes`,
+    byId: (id) => `${API_BASE_URL}/api/v1/clientes/${id}`,
   },
   
   // Projetos
   projetos: {
-    base: `${API_BASE_URL}/projetos`,
-    byId: (id) => `${API_BASE_URL}/projetos/${id}`,
+    base: `${API_BASE_URL}/api/v1/projetos`,
+    byId: (id) => `${API_BASE_URL}/api/v1/projetos/${id}`,
   },
   
   // Health check

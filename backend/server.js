@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import process from 'process';
 import { fileURLToPath } from 'url';
+import connectDB from './config/database.js';
 
 // Importar rotas
 import configuracoesRoutes from './routes/configuracoes.js';
@@ -114,12 +115,22 @@ app.use((err, req, res) => {
   });
 });
 
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
-  console.log(`📍 URL: http://localhost:${PORT}`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/health`);
-  console.log(`📚 API Docs: http://localhost:${PORT}/`);
-});
+// Conectar ao MongoDB e iniciar servidor
+const startServer = async () => {
+  try {
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log(`🚀 Servidor rodando na porta ${PORT}`);
+      console.log(`📱 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🌐 CORS configurado para: ${process.env.CORS_ORIGIN || 'localhost'}`);
+      console.log(`🗄️ MongoDB conectado com sucesso`);
+    });
+  } catch (error) {
+    console.error('❌ Erro ao iniciar servidor:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 export default app;

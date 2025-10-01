@@ -1,10 +1,12 @@
 import express from 'express';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+import process from 'node:process';
+import Cliente from '../models/Cliente.js';
 
-const JWT_SECRET = 'sua-chave-secreta-aqui';
+dotenv.config();
+
+const JWT_SECRET = process.env.JWT_SECRET || 'sua-chave-secreta-aqui';
 
 const router = express.Router();
 
@@ -32,195 +34,150 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Caminho para o arquivo de dados
-const dataPath = path.join(__dirname, '../data/clientes.json');
-
-// Função para ler dados
-const readData = () => {
+// GET /api/v1/clientes - Listar todos os clientes do usuário
+router.get('/', authenticateToken, async (req, res) => {
   try {
-    if (!fs.existsSync(dataPath)) {
-      return [];
-    }
-    const data = fs.readFileSync(dataPath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Erro ao ler arquivo de clientes:', error);
-    return [];
-  }
-};
-
-// Função para salvar dados
-const saveData = (data) => {
-  try {
-    // Garantir que o diretório existe
-    const dir = path.dirname(dataPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
+    const clientes = await Cliente.find({ usuario_id: req.user.userId }).sort({ createdAt: -1 });
     
-    fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Erro ao salvar arquivo de clientes:', error);
-    return false;
-  }
-};
-
-// GET - Listar clientes do usuário autenticado
-router.get('/', authenticateToken, (req, res) => {
-  try {
-    const clientes = readData();
-    // Filtrar clientes do usuário logado
-    const clientesUsuario = clientes.filter(c => c.usuario_id === req.user.id);
     res.json({
       success: true,
-      data: clientesUsuario
+      data: clientes,
+      message: `${clientes.length} cliente(s) encontrado(s)`
     });
   } catch (error) {
     console.error('Erro ao buscar clientes:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor' 
+      message: 'Erro interno do servidor'
     });
   }
 });
 
-// GET - Buscar cliente por ID (apenas do usuário autenticado)
-router.get('/:id', authenticateToken, (req, res) => {
+// GET /api/v1/clientes/:id - Buscar cliente por ID
+router.get('/:id', authenticateToken, async (req, res) => {
   try {
-    const clientes = readData();
-    const cliente = clientes.find(c => c.id === req.params.id && c.usuario_id === req.user.id);
-    
+    const cliente = await Cliente.findOne({ 
+      _id: req.params.id, 
+      usuario_id: req.user.userId 
+    });
+
     if (!cliente) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: 'Cliente não encontrado ou acesso negado' 
+        message: 'Cliente não encontrado'
       });
     }
-    
+
     res.json({
       success: true,
       data: cliente
     });
   } catch (error) {
     console.error('Erro ao buscar cliente:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor' 
+      message: 'Erro interno do servidor'
     });
   }
 });
 
-// POST - Criar novo cliente (associado ao usuário autenticado)
-router.post('/', authenticateToken, (req, res) => {
+// POST /api/v1/clientes - Criar novo cliente
+router.post('/', authenticateToken, async (req, res) => {
   try {
-    const clientes = readData();
-    const novoCliente = {
-      id: Date.now().toString(),
+    const clienteData = {
       ...req.body,
-      usuario_id: req.user.id, // Associar ao usuário logado
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      usuario_id: req.user.userId
     };
-    
-    clientes.push(novoCliente);
-    
-    if (saveData(clientes)) {
-      res.status(201).json({
-        success: true,
-        data: novoCliente,
-        message: 'Cliente criado com sucesso'
-      });
-    } else {
-      res.status(500).json({ 
-        success: false,
-        message: 'Erro ao salvar cliente' 
-      });
-    }
+
+    const novoCliente = new Cliente(clienteData);
+    const clienteSalvo = await novoCliente.save();
+
+    res.status(201).json({
+      success: true,
+      data: clienteSalvo,
+      message: 'Cliente criado com sucesso'
+    });
   } catch (error) {
     console.error('Erro ao criar cliente:', error);
-    res.status(500).json({ 
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Dados inválidos',
+        errors: Object.values(error.errors).map(err => err.message)
+      });
+    }
+
+    res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor' 
+      message: 'Erro interno do servidor'
     });
   }
 });
 
-// PUT - Atualizar cliente (apenas do usuário autenticado)
-router.put('/:id', authenticateToken, (req, res) => {
+// PUT /api/v1/clientes/:id - Atualizar cliente
+router.put('/:id', authenticateToken, async (req, res) => {
   try {
-    const clientes = readData();
-    const index = clientes.findIndex(c => c.id === req.params.id && c.usuario_id === req.user.id);
-    
-    if (index === -1) {
-      return res.status(404).json({ 
+    const clienteAtualizado = await Cliente.findOneAndUpdate(
+      { _id: req.params.id, usuario_id: req.user.userId },
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    if (!clienteAtualizado) {
+      return res.status(404).json({
         success: false,
-        message: 'Cliente não encontrado ou acesso negado' 
+        message: 'Cliente não encontrado'
       });
     }
-    
-    clientes[index] = {
-      ...clientes[index],
-      ...req.body,
-      usuario_id: req.user.id, // Manter associação ao usuário
-      updatedAt: new Date().toISOString()
-    };
-    
-    if (saveData(clientes)) {
-      res.json({
-        success: true,
-        data: clientes[index],
-        message: 'Cliente atualizado com sucesso'
-      });
-    } else {
-      res.status(500).json({ 
-        success: false,
-        message: 'Erro ao atualizar cliente' 
-      });
-    }
+
+    res.json({
+      success: true,
+      data: clienteAtualizado,
+      message: 'Cliente atualizado com sucesso'
+    });
   } catch (error) {
     console.error('Erro ao atualizar cliente:', error);
-    res.status(500).json({ 
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Dados inválidos',
+        errors: Object.values(error.errors).map(err => err.message)
+      });
+    }
+
+    res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor' 
+      message: 'Erro interno do servidor'
     });
   }
 });
 
-// DELETE - Deletar cliente (apenas do usuário autenticado)
-router.delete('/:id', authenticateToken, (req, res) => {
+// DELETE /api/v1/clientes/:id - Deletar cliente
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
-    const clientes = readData();
-    const index = clientes.findIndex(c => c.id === req.params.id && c.usuario_id === req.user.id);
-    
-    if (index === -1) {
-      return res.status(404).json({ 
+    const clienteDeletado = await Cliente.findOneAndDelete({
+      _id: req.params.id,
+      usuario_id: req.user.userId
+    });
+
+    if (!clienteDeletado) {
+      return res.status(404).json({
         success: false,
-        message: 'Cliente não encontrado ou acesso negado' 
+        message: 'Cliente não encontrado'
       });
     }
-    
-    clientes.splice(index, 1);
-    
-    if (saveData(clientes)) {
-      res.json({ 
-        success: true,
-        message: 'Cliente deletado com sucesso' 
-      });
-    } else {
-      res.status(500).json({ 
-        success: false,
-        message: 'Erro ao deletar cliente' 
-      });
-    }
+
+    res.json({
+      success: true,
+      message: 'Cliente deletado com sucesso'
+    });
   } catch (error) {
     console.error('Erro ao deletar cliente:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor' 
+      message: 'Erro interno do servidor'
     });
   }
 });
